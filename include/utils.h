@@ -24,8 +24,11 @@ namespace mycv
  * 
  */
 enum error_code{
+    kSuccess = 0,
     kImageEmpty,
-    kOutOfRange
+    kOutOfRange,
+    kBadSize,
+    kBadDepth,
 };
 
 /**
@@ -52,6 +55,11 @@ void error(
     const char* source_file, 
     int code_line
     );
+
+
+
+
+
 
 }//end namespace mycv
 

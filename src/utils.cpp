@@ -18,8 +18,11 @@ const char* error_code_string(int error_code)
     char buf[256] = {};
     switch(error_code)
     {
+        case kSuccess:      return "Success!";
         case kImageEmpty:   return "Image is empty!";
         case kOutOfRange:   return "Index out of range!";
+        case kBadSize:      return "Bad size!";
+        case kBadDepth:     return "bad depth!";
     }
 
     return "Unknown error";
@@ -33,7 +36,8 @@ void error(
     int code_line
     )
     {
-        printf("%s : %s. in %s function: %s , line : %d",
-        error_code_string(error_code),error_msg.c_str(),source_file,func_name,code_line);
+        //
+        printf("In %s , %d line ,error: %s in function %s , %s ",
+        source_file,code_line,error_code_string(error_code),func_name,error_msg.c_str());
     }
 }// end namespace mycv
