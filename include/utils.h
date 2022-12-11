@@ -19,10 +19,22 @@
 namespace mycv
 {
 
+/**
+ * @brief error code
+ * 
+ */
 enum error_code{
     kImageEmpty,
     kOutOfRange
 };
+
+/**
+ * @brief 把错误码翻译为文字
+ * 
+ * @param error_code  : 
+ * @return const char* 
+ */
+const char* error_code_string(int error_code);
 
 /**
  * @brief 用于输出错误信息

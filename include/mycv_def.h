@@ -34,7 +34,7 @@
 #define mycv_func "<unknown>"
 #endif
 
-#define SHOW_ERROR_CODE(code) (#code)
+#define SHOW_ERROR_CODE(code) (code)
 
 #define MYCV_ERROR(code,msg) mycv::error(code,msg,mycv_func,__FILE__,__LINE__)
 

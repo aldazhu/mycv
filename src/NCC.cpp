@@ -46,7 +46,7 @@ int NormalizedCrossCorrelation(
     {
         if(source.empty() || target.empty())
         {
-            std::cout<<;
+            std::cout<<std::endl;
             return -1;
         }
         int H = source.rows;
