@@ -34,15 +34,13 @@ namespace mycv
  * 
  * @param source : 搜索图CV_8UC1格式
  * @param target ：模板图CV_8UC1格式
- * @param loc : 匹配位置
- * @param max_value ：匹配得分
- * @return int 
+ * @param result : 匹配结果的map图
+ * @return int : 程序运行的状态码
  */
 int NormalizedCrossCorrelation(
     const cv::Mat &source,
     const cv::Mat &target,
-    cv::Point &loc,
-    float &max_value
+    cv::Mat &result
     )
     {
         if(source.empty() || target.empty())
@@ -59,6 +57,30 @@ int NormalizedCrossCorrelation(
             MYCV_ERROR(kBadSize,"NCC source image size should larger than targe image");
             return kBadSize;
         }
+
+        //r = cov(X,Y)/(sigma(X) * sigma(Y))
+        //sigma(X) = sqrt(var(X))
+        int r_h = H - t_h + 1; //结果图的高度
+        int r_w = W - t_w + 1;
+        double target_mean = calculateMean(target);
+        double target_var = calculateVariance(target,target_mean);
+        double target_std_var = std::sqrt(target_var);
+        result = cv::Mat::zeros(cv::Size(r_w,r_h),CV_32FC1);
+        for(int row = 0; row < r_h ; row++)
+        {
+            float * p = result.ptr<float>(row);
+            for(int col = 0; col < r_w; col++)
+            {
+                cv::Rect ROI(row,col,t_w,t_h);//source上和目标图匹配的子图
+                cv::Mat temp = source(ROI);
+                double temp_mean = calculateMean(temp);
+                double cov = calculateCovariance(temp,target,temp_mean,target_mean);
+                double temp_var = calculateVariance(temp);
+                double temp_std_var = std::sqrt(temp_var);
+                p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+            }
+        }
+
 
         return kSuccess;
     }
@@ -123,7 +145,7 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean)
  * @param mean_b  : B的像素均值
  * @return double : 两个图像的协方差
  */
-double covariance(const cv::Mat &A, const cv::Mat &B,double mean_a,double mean_b)
+double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a,double mean_b)
 {
     if(A.empty() || B.empty())
     {
@@ -151,14 +173,13 @@ double covariance(const cv::Mat &A, const cv::Mat &B,double mean_a,double mean_b
 
     double mean_AB = sum / (A.rows * A.cols);
 
-    cv::Rect ROI(0,0,A.cols,A.rows);
-    if (mean_a == -1)
+    if (-1 == mean_a)
     {
-        calculateRegionMean(A,ROI,mean_a);
+        mean_a = calculateMean(A);
     }
-    if (mean_b == -1)
+    if (-1 == mean_b)
     {
-        calculateRegionMean(B,ROI,mean_b);
+        mean_b = calculateMean(B);
     }
     
     //cov(X,Y) = E[ (X-E(x)) * (Y-E(Y)) ] = E(XY) - E(x)E(Y)
@@ -174,7 +195,7 @@ double covariance(const cv::Mat &A, const cv::Mat &B,double mean_a,double mean_b
  * @param mean  : 图像的灰度均值，默认值为-1，不输入时会计算mean
  * @return double ：图像的方差
  */
-double variance(const cv::Mat &image,double mean)
+double calculateVariance(const cv::Mat &image,double mean)
 {
     if (image.empty())  
     {
@@ -183,7 +204,7 @@ double variance(const cv::Mat &image,double mean)
     }
     if (-1 == mean)
     {
-        mean = mean(image);
+        mean = calculateMean(image);
     }
 
     double sum = 0 ;
@@ -210,7 +231,7 @@ double variance(const cv::Mat &image,double mean)
  * @param image  : 输入图CV_8UC1
  * @return double ： 输入图像的灰度均值
  */
-double mean(const cv::Mat &image)
+double calculateMean(const cv::Mat &image)
 {
      if (image.empty())  
     {

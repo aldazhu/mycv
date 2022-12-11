@@ -27,15 +27,13 @@ namespace mycv{
  * 
  * @param source : 搜索图CV_8UC1格式
  * @param target ：模板图CV_8UC1格式
- * @param loc : 匹配位置
- * @param max_value ：匹配得分
- * @return int 
+ * @param result : 匹配结果的map图
+ * @return int ： 程序运行的状态码
  */
 int NormalizedCrossCorrelation(
     const cv::Mat &source,
     const cv::Mat &target,
-    cv::Point &loc,
-    float &max_value
+    cv::Mat &result
     );
 
 
@@ -63,7 +61,7 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean);
  * @param mean_b  : B的灰度均值，默认值为-1，不输入时会计算mean
  * @return double : 两个图像的协方差
  */
-double covariance(const cv::Mat &A, const cv::Mat &B,double mean_a=-1,double mean_b=-1);
+double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a=-1,double mean_b=-1);
     
 /**
  * @brief 计算输入图像的方差，如果已知mean就不再计算mean
@@ -72,7 +70,7 @@ double covariance(const cv::Mat &A, const cv::Mat &B,double mean_a=-1,double mea
  * @param mean  : 图像的灰度均值，默认值为-1，不输入时会计算mean
  * @return double ：图像的方差
  */
-double variance(const cv::Mat &image,double mean=-1);
+double calculateVariance(const cv::Mat &image,double mean=-1);
 
 
 /**
@@ -81,7 +79,7 @@ double variance(const cv::Mat &image,double mean=-1);
  * @param image  : 输入图CV_8UC1
  * @return double ： 输入图像的灰度均值
  */
-double mean(const cv::Mat &image);
+double calculateMean(const cv::Mat &image);
 
 
 } //end namespace mycv
