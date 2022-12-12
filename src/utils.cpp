@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "stdio.h"
+#include "opencv.hpp"
 
 namespace mycv
 {
@@ -37,7 +38,28 @@ void error(
     )
     {
         //
-        printf("In %s , %d line ,error: %s in function %s , %s ",
+        printf("In %s , %d line ,error: %s in function %s , %s \n",
         source_file,code_line,error_code_string(error_code),func_name,error_msg.c_str());
     }
+
+
+void showImage(const cv::Mat& image, const std::string& name, int waitMode,int windowMode)
+{
+    if (image.empty())
+    {
+        MYCV_ERROR(kImageEmpty, "image is empty!");
+        return;
+    }
+    cv::namedWindow(name, windowMode);
+    cv::imshow(name, image);
+    cv::waitKey(waitMode);
+}
+
+
+
+
+
+
+
+
 }// end namespace mycv

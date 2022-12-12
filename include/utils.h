@@ -16,6 +16,8 @@
 
 #include <string>
 
+#include "opencv.hpp"
+
 namespace mycv
 {
 
@@ -57,7 +59,7 @@ void error(
     );
 
 
-
+void showImage(const cv::Mat& image, const std::string& name,int waitMode=1, int windowMode = 0);
 
 
 

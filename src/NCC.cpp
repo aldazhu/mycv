@@ -71,11 +71,11 @@ int NormalizedCrossCorrelation(
             float * p = result.ptr<float>(row);
             for(int col = 0; col < r_w; col++)
             {
-                cv::Rect ROI(row,col,t_w,t_h);//source上和目标图匹配的子图
+                cv::Rect ROI(col,row,t_w,t_h);//source上和目标图匹配的子图
                 cv::Mat temp = source(ROI);
                 double temp_mean = calculateMean(temp);
                 double cov = calculateCovariance(temp,target,temp_mean,target_mean);
-                double temp_var = calculateVariance(temp);
+                double temp_var = calculateVariance(temp,temp_mean);
                 double temp_std_var = std::sqrt(temp_var);
                 p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
             }
@@ -166,12 +166,12 @@ double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a,doub
         const uchar *pb = B.ptr<uchar>(row);
         for (int  col = 0; col < A.cols; col++)
         {
-            sum += pa[col] * pb[col];
+            sum += (double)pa[col] * (double)pb[col];
         }
         
     }
 
-    double mean_AB = sum / (A.rows * A.cols);
+    double mean_AB = sum / ((double)A.rows * (double)A.cols);
 
     if (-1 == mean_a)
     {
@@ -218,7 +218,7 @@ double calculateVariance(const cv::Mat &image,double mean)
         
     }
 
-    double var = sum / (image.cols * image.rows);
+    double var = sum / ((double)image.cols * (double)image.rows);
     
     return var;    
 }
@@ -250,7 +250,7 @@ double calculateMean(const cv::Mat &image)
         
     }
 
-    double mean = sum / (image.cols * image.rows);
+    double mean = sum / ((double)image.cols * (double)image.rows);
     return mean;
 }
 
