@@ -34,14 +34,14 @@ int integral(const cv::Mat &image,cv::Mat &integral_image)
 
     int h = image.rows;
     int w = image.cols;
-    integral_image = cv::Mat::zeros(cv::Size(w+1,h+1),CV_32FC1);
+    integral_image = cv::Mat::zeros(cv::Size(w+1,h+1),CV_64FC1);
 
     //SAT(i,j)=S(i,j-1)+S(i-1,j)-S(i-1,j-1)+I(i,j)
     for(int i = 0; i < h ; i++)
     {
         const uchar *ps = image.ptr<uchar>(i);
-        float *pd_m1 = integral_image.ptr<float>(i);//integral 的"上一行"
-        float *pd = integral_image.ptr<float>(i+1); //integral 的"当前行"
+        double *pd_m1 = integral_image.ptr<double>(i);//integral 的"上一行"
+        double *pd = integral_image.ptr<double>(i+1); //integral 的"当前行"
         for(int j = 0; j < w; j++)
         {
             pd[j+1] = pd[j] + pd_m1[j+1] - pd_m1[j] + ps[j];
@@ -73,22 +73,22 @@ int integral(const cv::Mat &image,cv::Mat &integral_image,cv::Mat &integral_sq)
 
     int h = image.rows;
     int w = image.cols;
-    integral_image = cv::Mat::zeros(cv::Size(w+1,h+1),CV_32FC1);
-    integral_sq = cv::Mat::zeros(cv::Size(w+1,h+1),CV_32FC1);
+    integral_image = cv::Mat::zeros(cv::Size(w+1,h+1),CV_64FC1);
+    integral_sq = cv::Mat::zeros(cv::Size(w+1,h+1),CV_64FC1);
 
     //SAT(i,j)=S(i,j-1)+S(i-1,j)-S(i-1,j-1)+I(i,j)
     //SQAT(i,j)=S(i,j-1)+S(i-1,j)-S(i-1,j-1)+I(i,j)*I(i,j)
     for(int i = 0; i < h ; i++)
     {
         const uchar *ps = image.ptr<uchar>(i);
-        float *pd_m1 = integral_image.ptr<float>(i);//integral 的"上一行"
-        float *pd = integral_image.ptr<float>(i+1); //integral 的"当前行"
-        float *pqd_m1 = integral_sq.ptr<float>(i);
-        float *pqd = integral_sq.ptr<float>(i+1);
+        double *pd_m1 = integral_image.ptr<double>(i);//integral 的"上一行"
+        double *pd = integral_image.ptr<double>(i+1); //integral 的"当前行"
+        double *pqd_m1 = integral_sq.ptr<double>(i);
+        double *pqd = integral_sq.ptr<double>(i+1);
         for(int j = 0; j < w; j++)
         {
-            pd[j+1] = pd[j] + pd_m1[j+1] - pd_m1[j] + (float)ps[j];
-            pqd[j+1] = pqd[j] + pqd_m1[j+1] - pqd_m1[j] + (float)ps[j] * (float)ps[j];
+            pd[j+1] = pd[j] + pd_m1[j+1] - pd_m1[j] + (double)ps[j];
+            pqd[j+1] = pqd[j] + pqd_m1[j+1] - pqd_m1[j] + (double)ps[j] * (double)ps[j];
         }
     }
 

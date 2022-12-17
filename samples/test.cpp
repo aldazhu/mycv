@@ -18,7 +18,7 @@ void test_integralImage()
     cv::Mat source, result,opencv_sum,opencv_sqsum;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     mycv::integral(source, result);
-    cv::integral(source, opencv_sum,opencv_sqsum, CV_32F,CV_32F);
+    cv::integral(source, opencv_sum,opencv_sqsum, CV_64F,CV_64F);
     mycv::showImage(source,"source");
     mycv::showImage(opencv_sum,"opencv integral");
     mycv::showImage(result, "integral",0);
@@ -37,6 +37,10 @@ void test_integralImage()
     //comapre two array
     cv::Mat diff_integral = integral_image - opencv_sum;
     cv::Mat diff_sqsum = integral_sq - opencv_sqsum;
+    
+    std::cout << "integral difference sum" << cv::sum(diff_integral) << std::endl;;
+    std::cout << "integral_sq difference sum" << cv::sum(diff_integral) << std::endl;;
+
     mycv::showImage(diff_integral, "diff integral");
     mycv::showImage(diff_sqsum, "diff sqsum",0);
 
