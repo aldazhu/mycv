@@ -31,6 +31,7 @@ enum error_code{
     kOutOfRange,
     kBadSize,
     kBadDepth,
+    kBadInput
 };
 
 /**
@@ -60,6 +61,35 @@ void error(
 
 
 void showImage(const cv::Mat& image, const std::string& name,int waitMode=1, int windowMode = 0);
+
+
+/**
+ * @brief 比较两个数组的差异，返回两个数组的差异的绝对值之和
+ * 
+ * @tparam T : 数组类型
+ * @param A  : 数组A
+ * @param B  : 数组B
+ * @param n  : 比较前n个元素
+ * @return double : 返回两个数组前n个元素差异绝对值之和
+ */
+template<typename TA,typename TB>
+double compareArray(TA* A, TB* B,int n)
+{
+    if(nullptr == A || nullptr == B)
+    {
+        MYCV_ERROR(mycv::kBadInput,"input array is none");
+        throw "input array is none!";
+    }
+
+    double sum = 0;
+    for(int i=0; i < n; i++)
+    {
+        sum += (A[i] - B[i]) * (A[i] - B[i]);
+    }
+
+    return sum;
+}
+
 
 
 

@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 
+
 void test_error_code()
 {
     int code = mycv::kImageEmpty;
@@ -13,14 +14,32 @@ void test_error_code()
 
 void test_integralImage()
 {
-    std::string src_path = "data\\source.jfif";
-    cv::Mat source, result,opencv_result;
+    std::string src_path = "data\\target.jfif";
+    cv::Mat source, result,opencv_sum,opencv_sqsum;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     mycv::integral(source, result);
-    cv::integral(source, opencv_result, CV_32F);
+    cv::integral(source, opencv_sum,opencv_sqsum, CV_32F,CV_32F);
     mycv::showImage(source,"source");
-    mycv::showImage(opencv_result,"opencv integral");
+    mycv::showImage(opencv_sum,"opencv integral");
     mycv::showImage(result, "integral",0);
+
+    //another integral image
+    cv::Mat integral_image, integral_sq;
+    mycv::integral(source, integral_image, integral_sq);
+
+    
+    
+    mycv::showImage(integral_image, "integral image");
+    mycv::showImage(integral_sq, "integral sq");
+    mycv::showImage(opencv_sqsum, "opencv integral sq",0);
+
+
+    //comapre two array
+    cv::Mat diff_integral = integral_image - opencv_sum;
+    cv::Mat diff_sqsum = integral_sq - opencv_sqsum;
+    mycv::showImage(diff_integral, "diff integral");
+    mycv::showImage(diff_sqsum, "diff sqsum",0);
+
 }
 
 void test_NCC()
@@ -53,7 +72,8 @@ void del()
 int main()
 {
     //test_NCC();
-    //test_integralImage();
-    del();
+    test_integralImage();
+    //del();
+    system("pause");
     return 0;
 }

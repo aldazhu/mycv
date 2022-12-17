@@ -23,7 +23,8 @@ const char* error_code_string(int error_code)
         case kImageEmpty:   return "Image is empty!";
         case kOutOfRange:   return "Index out of range!";
         case kBadSize:      return "Bad size!";
-        case kBadDepth:     return "bad depth!";
+        case kBadDepth:     return "Bad depth!";
+        case kBadInput:     return "Bad input";
     }
 
     return "Unknown error";

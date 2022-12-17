@@ -48,7 +48,6 @@ int integral(const cv::Mat &image,cv::Mat &integral_image)
         }
     }
 
-
     return kSuccess;
 }
 
