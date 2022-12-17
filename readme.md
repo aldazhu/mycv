@@ -5,3 +5,6 @@
 
 # 实现
 ## 1. NCC
+原理部分见 [template_match](doc\template_match.md)
+
+## 2.积分图
