@@ -42,6 +42,21 @@ int integral(const cv::Mat &image,cv::Mat &integral_image);
  */
 int integral(const cv::Mat &image,cv::Mat &integral_image,cv::Mat &integral_sq);
 
+/**
+ * @brief Get the Region sum From Integral Image or sq integral image
+ * 原图上的区域为tpx，tpy,btx,bty,在积分图或者平方的积分图上的位置为tpx+1,tpy+1,btx+1,bty+1
+ * region sum = SAT(btx+1,bty+1) - SAT(tpx+1,bty+1) - SAT(btx+1,tpy+1) + SAT(tpx+1,tpy+1)
+ * 
+ * @param integral  : 像素和的积分图或者像素平方的积分图，CV_64FC1格式
+ * @param tpx  : x of top left
+ * @param tpy  : y of top right
+ * @param btx  : x of bottom right
+ * @param bty  : y of bottom right
+ * @param sum  : 区域和
+ * @return int : 程序运行状态码
+ */
+int getRegionSumFromIntegralImage(const cv::Mat & integral,int tpx,int tpy,int btx,int bty,double &sum);
+
 }// end namespace mycv
 
 

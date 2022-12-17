@@ -8,7 +8,7 @@ $$SQAT(x,y) = \underset{i\leq x,j\leq y}{\Sigma }I(i,j)^2$$
 
 $$SAT(x,y) = SAT(x-1,y) + SAT(x,y-1) - SAT(x-1,y-1) + I(x,y)$$ 
 
-计算区域均值
+计算区域求和
 tpx,tpy,btx,bty
 AAAAA
 ABAAA

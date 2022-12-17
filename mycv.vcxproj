@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="samples\test.cpp" />
+    <ClCompile Include="src\integral_image.cpp" />
     <ClCompile Include="src\NCC.cpp" />
     <ClCompile Include="src\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\integral_image.h" />
     <ClInclude Include="include\mycv.hpp" />
     <ClInclude Include="include\mycv_def.h" />
     <ClInclude Include="include\NCC.h" />
