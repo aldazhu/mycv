@@ -11,25 +11,37 @@ p在数值上在[-1,1]之间
 - 当p<0时，两个变量负相关，而且p越小负相关性越强；
 
 
-$上式中cov(X,Y)表示的是两个变量X、Y的协方差，\sigma(X)表示的是变量X的标准差差，\sigma(Y)表示的是变量Y的标准差$。
+上式中$cov(X,Y)$表示的是两个变量$X、Y$的协方差，$\sigma(X)$表示的是变量X的标准差差，$\sigma(Y)$表示的是变量Y的标准差$。
 
 ## 2.**协方差 covariance**
 协方差也是用来衡量两个变量之间的相关性的，当两个变量之间的协方差是0时不相关（两个变量相互独立），大于0时正相关，小于0时负相关。例如身高和体重之间的协方差就是一个正数，因为身高和体重是正相关的。
 协方差由下式给出：
 $$cov(X,Y)=E[(X-E(X))(Y-E(Y))]$$
-$其中E()表示变量的数学期望,eg:E(X)表示变量X的数学期望,E[X]=\Sigma \mu_i x_i,\mu_i 是 x_i的权重，如果每个样本的权重都相等的话则写为：E[X]=\frac{\Sigma x_i}{n}$。
+其中E()表示变量的数学期望,eg:E(X)表示变量X的数学期望,$E[X]=\Sigma \mu_i x_i,\mu_i 是 x_i$的权重，如果每个样本的权重都相等的话则写为：$E[X]=\frac{\Sigma x_i}{n}$。
 
 此外协方差的等价式
 
-$$cov(X,Y)  = E[(X-E(X))(Y-E(Y))]=E[XY - XE(Y) - YE(X) + E(X)E(Y)]=E(XY)-2E(X)E(Y) + E(x)E(Y)=E(XY)-E(X)E(Y)$$
+$$
+\begin{aligned}
+cov(X,Y)    &= E[(X-E(X))(Y-E(Y))]\\
+            &=E[XY - XE(Y) - YE(X) + E(X)E(Y)]\\
+            &=E(XY)-2E(X)E(Y) + E(X)E(Y)\\
+            &=E(XY)-E(X)E(Y)
+\end{aligned}
+$$
+
 
 **协方差示例**
-统计了三个人的身高体重数据，X表示身高，Y表示体重
+有三个人的身高体重数据，X表示身高，Y表示体重
 >X身高(cm): 100,150,200 \
 >Y体重(kg): 50,100,150
 
 $则身高和体重的协方差cov(X,Y)=E(XY)-E(X)E(Y)$
-$其中E(X)=\frac{1}{3}(100+150+200)=150,E(Y)=100,E(XY)=\frac{1}{3}(100*50+150*100+200*150)=\frac{50000}{3},所以cov(X,Y)=E(XY)-E(X)E(Y)=\frac{50000}{3}-150*100=\frac{5000}{3}.$
+其中:
+
+$E(X)=\frac{1}{3}(100+150+200)=150$,
+$E(Y)=100,E(XY)=\frac{1}{3}(100*50+150*100+200*150)=\frac{50000}{3}$
+$cov(X,Y)=E(XY)-E(X)E(Y)=\frac{50000}{3}-150*100=\frac{5000}{3}.$
 
 
 ## 3. **方差 variance**
@@ -39,16 +51,22 @@ $其中E(X)=\frac{1}{3}(100+150+200)=150,E(Y)=100,E(XY)=\frac{1}{3}(100*50+150*1
 ## 4.模板匹配中的NCC方法
 模板匹配就是给定一个目标图和一个搜索图，采用一定的搜索策略去找到一个和目标相近的区域，在刚性模板匹配中，一般都是采用滑窗的方法来搜索，在比较两个图的相似度时有很多种方法，最简单的就是两个图像直接相减，NCC（Normalized Cross Correlation）就是计算两张图的pearson相关性，值越大说明两个图像越相像。
 
-$记T_{m\times n}为目标图(target),S_{M\times N}为源搜索图(source),S_{x,y}为S中以点(x,y)为左上角的和T大小相同的子图，R_{(M-m+1)\times (N-n+1)}为匹配的结果图$，则$$R(x,y)=\frac{cov(S_{x,y},T)}{\sigma(S_{x,y})\sigma(T)}$$  
+$记T_{m\times n}为目标图(target)$,$S_{M\times N}$为源搜索图(source),$S_{x,y}$为S中以点$(x,y)$为左上角的和T大小相同的子图，$R_{(M-m+1)\times (N-n+1)}$为匹配的结果图，则$$R(x,y)=\frac{cov(S_{x,y},T)}{\sigma(S_{x,y})\sigma(T)}$$  
 
-其中$$cov(S_{x,y},T)=E(S_{x,y}T)-E(S_{x,y})E(T)=\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}S_{x,y}(i,j)T(i,j)}{mn} - \bar{S_{x,y}}\bar{T}$$
+其中$$
+\begin{aligned}
+cov(S_{x,y},T)  &=E(S_{x,y}T)-E(S_{x,y})E(T)\\
+                &=\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}S_{x,y}(i,j)T(i,j)}{mn} - \bar{S_{x,y}}\bar{T}
+\end{aligned}
+$$
 
-$$\bar{S_{x,y}}=\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}S_{x,y}(i,j)}{mn}$$
-$$\bar{T} = \frac{\Sigma_{i=1}^{m}\Sigma_{j=1}T(i,j)}{mn}$$
+$$\bar{S_{x,y}}=\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}S_{x,y}(i,j)}{mn}$$
 
-$$\sigma(S_{x,y})=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}{(S_{x,y}(i,j)-\bar{S_{x,y}}})^2}{mn}}$$
+$$\bar{T} = \frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}T(i,j)}{mn}$$
 
-$$\sigma(T)=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}{(T(i,j)-\bar{T}})^2}{mn}}$$
+$$\sigma(S_{x,y})=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}{(S_{x,y}(i,j)-\bar{S_{x,y}}})^2}{mn}}$$
+
+$$\sigma(T)=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}{(T(i,j)-\bar{T}})^2}{mn}}$$
 
 上面的式子展开看起来感觉很复杂，以往看到的也都是这样完全展开又组合在一起的式子，就像opencv官网的解释，很完整但是让人很费解，具体为什么是这样搞不清楚（也可能是我菜吧），但是看上面R(x,y)的式子意义是很明确的,就是计算两个图之间的Pearson相关系数。按照公式就可以直接开工写代码了。
 
@@ -80,14 +98,12 @@ $$\sigma(T)=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}{(T(i,j)
 
 ![result](../data/result.png "result")
 
+可以看到在目标处得到最大值，也就是正确匹配到了目标图。
+
 ## 7.部分核心源码
 
 目前实现
-### NCC.h
 
-```C
-
-```
 
 ### NCC.cpp
 

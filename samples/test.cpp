@@ -11,6 +11,18 @@ void test_error_code()
 
 }
 
+void test_integralImage()
+{
+    std::string src_path = "data\\source.jfif";
+    cv::Mat source, result,opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    mycv::integral(source, result);
+    cv::integral(source, opencv_result, CV_32F);
+    mycv::showImage(source,"source");
+    mycv::showImage(opencv_result,"opencv integral");
+    mycv::showImage(result, "integral",0);
+}
+
 void test_NCC()
 {
     std::string src_path = "data\\source.jfif";
@@ -30,11 +42,18 @@ void test_NCC()
     cv::imwrite("data\\result.png", result);
 }
 
+void del()
+{
+    std::cout << DBL_MAX << std::endl;
+    std::cout << FLT_MAX << std::endl;
 
+}
 
 
 int main()
 {
-    test_NCC();
+    //test_NCC();
+    //test_integralImage();
+    del();
     return 0;
 }
