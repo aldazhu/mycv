@@ -120,17 +120,17 @@ int getRegionSumFromIntegralImage(const cv::Mat & integral,int tpx,int tpy,int b
     if(tpx > btx 
     || tpy > bty
     || tpx < 0 
-    || tpy <0
+    || tpy < 0
     || btx > integral.cols - 1
     || bty > integral.rows - 1)
     {
         MYCV_ERROR(mycv::kBadSize,"0 <= tpx <= btx <= w, && 0<= tpy <= bty <= h");
         return mycv::kBadSize;
     }
-    const double *ptp = integral.ptr<double>(tpy+1);
+    const double *ptp = integral.ptr<double>(tpy);
     const double *pbt = integral.ptr<double>(bty+1);
     
-    sum = (*(pbt+btx+1)) - (*(pbt+tpx+1)) - (*(ptp+btx+1)) + (*(ptp+tpx+1)); 
+    sum = (*(pbt+btx+1)) - (*(pbt+tpx)) - (*(ptp+btx+1)) + (*(ptp+tpx)); 
 
     return mycv::kSuccess;
 }

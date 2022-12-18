@@ -46,6 +46,53 @@ void test_integralImage()
 
 }
 
+void test_NCC_speed()
+{
+    const int TIMES = 10;
+    std::string src_path = "data\\source.jfif";
+    std::string target_path = "data\\target.jfif";
+    cv::Mat source, target, result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    std::chrono::steady_clock::time_point start_time,end_time;
+    double runtime = 0;
+
+    // location
+    double min_value, max_value;
+    cv::Point min_loc, max_loc;
+
+    // my NCC test
+    printf("source image size w,h = (%d,%d) \n",source.cols,source.rows);
+    printf("target image size w,h = (%d,%d) \n",target.cols,target.rows);
+
+    start_time = std::chrono::steady_clock::now();;
+    for (int n = 0; n < TIMES; n++)
+    {
+        mycv::NormalizedCrossCorrelation(source, target, result);
+    }
+    end_time = std::chrono::steady_clock::now();;
+    runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
+    printf("my NCC run %d times,average use %f ms \n",TIMES,runtime);
+
+    cv::minMaxLoc(result, &min_value,&max_value,&min_loc,&max_loc);
+    printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+        min_value,min_loc.x,min_loc.y,max_value,max_loc.x,max_loc.y);
+
+    // opencv NCC test
+    start_time = std::chrono::steady_clock::now();;
+    for (int n = 0; n < TIMES; n++)
+    {
+        cv::matchTemplate(source,target,result,cv::TM_CCOEFF_NORMED);
+    }
+    end_time = std::chrono::steady_clock::now();;
+    runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
+    printf("opencv NCC run %d times,average use %f ms \n", TIMES, runtime);
+    cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+    printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+        min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+
+}
+
 void test_NCC()
 {
     std::string src_path = "data\\source.jfif";
@@ -76,7 +123,8 @@ void del()
 int main()
 {
     //test_NCC();
-    test_integralImage();
+    //test_integralImage();
+    test_NCC_speed();
     //del();
     system("pause");
     return 0;

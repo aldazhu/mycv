@@ -13,6 +13,7 @@
 
 #include "NCC.h"
 #include "utils.h"
+#include "integral_image.h"
 
 #include "stdio.h"
 #include <iostream>
@@ -62,10 +63,19 @@ int NormalizedCrossCorrelation(
         //sigma(X) = sqrt(var(X))
         int r_h = H - t_h + 1; //结果图的高度
         int r_w = W - t_w + 1;
+        cv::Mat integral_image;//source的积分图
+        cv::Mat sq_integral;//source 的像素平方的积分图
+        integral(source,integral_image,sq_integral);
+
+        const double target_size = t_h * t_w;
+
         double target_mean = calculateMean(target);
         double target_var = calculateVariance(target,target_mean);
         double target_std_var = std::sqrt(target_var);
         result = cv::Mat::zeros(cv::Size(r_w,r_h),CV_32FC1);
+
+        double region_sum = 0;
+        double region_sq_sum = 0;
         for(int row = 0; row < r_h ; row++)
         {
             float * p = result.ptr<float>(row);
@@ -73,9 +83,17 @@ int NormalizedCrossCorrelation(
             {
                 cv::Rect ROI(col,row,t_w,t_h);//source上和目标图匹配的子图
                 cv::Mat temp = source(ROI);
-                double temp_mean = calculateMean(temp);
+                //计算source中对应子块的均值
+                getRegionSumFromIntegralImage(integral_image,col,row,col+t_w-1,row+t_h-1,region_sum);
+                double temp_mean = region_sum / target_size;
+                
+                //计算两个图的协方差
                 double cov = calculateCovariance(temp,target,temp_mean,target_mean);
-                double temp_var = calculateVariance(temp,temp_mean);
+                
+                //计算source中对应子块的方差
+                getRegionSumFromIntegralImage(sq_integral,col,row,col+t_w-1,row+t_h-1,region_sq_sum);
+
+                double temp_var = (region_sq_sum -2*temp_mean*region_sum)/target_size + temp_mean*temp_mean;
                 double temp_std_var = std::sqrt(temp_var);
                 p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
             }
