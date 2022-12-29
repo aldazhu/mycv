@@ -43,12 +43,21 @@ void test_integralImage()
 
     mycv::showImage(diff_integral, "diff integral");
     mycv::showImage(diff_sqsum, "diff sqsum",0);
+    
+    //save image
+    cv::normalize(integral_image, integral_image, 1.0, 0.0, cv::NORM_MINMAX);
+    integral_image.convertTo(integral_image, CV_8U, 255, 0);
+    cv::normalize(integral_sq, integral_sq, 1.0, 0.0, cv::NORM_MINMAX);
+    integral_sq.convertTo(integral_sq, CV_8U, 255, 0);
+    cv::imwrite("data\\integral.png", integral_image);
+    cv::imwrite("data\\integral_sq.png", integral_sq);
+
 
 }
 
 void test_NCC_speed()
 {
-    const int TIMES = 10;
+    const int TIMES = 1;
     std::string src_path = "data\\source.jfif";
     std::string target_path = "data\\target.jfif";
     cv::Mat source, target, result;
@@ -123,8 +132,8 @@ void del()
 int main()
 {
     //test_NCC();
-    //test_integralImage();
-    test_NCC_speed();
+    test_integralImage();
+    //test_NCC_speed();
     //del();
     system("pause");
     return 0;

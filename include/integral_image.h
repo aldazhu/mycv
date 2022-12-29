@@ -20,7 +20,7 @@ namespace mycv
 /**
  * @brief 计算输入图的积分图,为了提高计算效率，可以让积分图比输入图多一行一列，
  * 具体的就是在原图左边插入一列0，上面插入一行0，设原图为I，积分图为SAT(sum area of table)
- * 则：SAT(i,j)=S(i,j-1)+S(i-1,j)-S(i-1,j-1)+I(i,j)
+ * 则：SAT(i,j) = SAT(i,j-1) + SAT(i-1,j) - SAT(i-1,j-1) + I(i,j)
  * 这样就不用考虑下边界的情况，省掉很多判断条件
  * 
  * @param image  : 输入图CV_8UC1，MxN
@@ -31,8 +31,9 @@ int integral(const cv::Mat &image,cv::Mat &integral_image);
 
 /**
  * @brief 计算输入图的积分图,为了提高计算效率，可以让积分图比输入图多一行一列，
- * 具体的就是在原图左边插入一列0，上面插入一行0，设原图为I，积分图为SAT(sum area of table)
- * 则：SAT(i,j)=S(i,j-1)+S(i-1,j)-S(i-1,j-1)+I(i,j)
+ * 具体的就是在原图左边插入一列0，上面插入一行0，设原图为I，积分图为SAT(summed area table)
+ * 则：SAT(i,j) = SAT(i,j-1) + SAT(i-1,j) - SAT(i-1,j-1) + I(i,j)
+ * SQAT(i,j) = SQAT(i,j-1) + SQAT(i-1,j) - SQAT(i-1,j-1) + I(i,j) * I(i,j)
  * 这样就不用考虑下边界的情况，省掉很多判断条件
  * 
  * @param image  : 输入图CV_8UC1，MxN

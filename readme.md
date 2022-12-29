@@ -17,7 +17,7 @@ opencv中用TM_CCOEFF_NORMED方法
 ```
 source image size w,h = (1095,680)
 target image size w,h = (89,91)
-my NCC run 10 times, use 12359.000000 ms
+my NCC run 10 times, use 12359.000000 ms       
 min_value=-0.389405 , min_loc(x,y)=(892,537),    max_value=1.187444,max_loc(x,y)=(393,286)
 opencv NCC run 10 times, use 14.000000 ms
 min_value=-0.431418 , min_loc(x,y)=(799,210),    max_value=0.998322,max_loc(x,y)=(393,286)
