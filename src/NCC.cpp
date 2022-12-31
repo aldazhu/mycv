@@ -93,7 +93,7 @@ int NormalizedCrossCorrelation(
                 //计算source中对应子块的方差
                 getRegionSumFromIntegralImage(sq_integral,col,row,col+t_w-1,row+t_h-1,region_sq_sum);
 
-                double temp_var = (region_sq_sum -2*temp_mean*region_sum)/target_size + temp_mean*temp_mean;
+                double temp_var = (region_sq_sum - temp_mean*region_sum)/target_size;
                 double temp_std_var = std::sqrt(temp_var);
                 p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
             }
@@ -226,7 +226,7 @@ double calculateVariance(const cv::Mat &image,double mean)
     }
 
     double sum = 0 ;
-    for (int  row = 0; row < image.cols; row++)
+    for (int  row = 0; row < image.rows; row++)
     {
         const uchar * p = image.ptr<uchar>(row);
         for (int col = 0; col < image.cols; col++)
@@ -258,7 +258,7 @@ double calculateMean(const cv::Mat &image)
     }
 
     double sum = 0 ;
-    for (int  row = 0; row < image.cols; row++)
+    for (int  row = 0; row < image.rows; row++)
     {
         const uchar * p = image.ptr<uchar>(row);
         for (int col = 0; col < image.cols; col++)

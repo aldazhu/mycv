@@ -57,7 +57,7 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 1;
+    const int TIMES = 5;
     std::string src_path = "data\\source.jfif";
     std::string target_path = "data\\target.jfif";
     cv::Mat source, target, result;
@@ -74,6 +74,9 @@ void test_NCC_speed()
     printf("source image size w,h = (%d,%d) \n",source.cols,source.rows);
     printf("target image size w,h = (%d,%d) \n",target.cols,target.rows);
 
+    //warm up
+    mycv::NormalizedCrossCorrelation(source, target, result);
+
     start_time = std::chrono::steady_clock::now();;
     for (int n = 0; n < TIMES; n++)
     {
@@ -87,6 +90,9 @@ void test_NCC_speed()
     printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
         min_value,min_loc.x,min_loc.y,max_value,max_loc.x,max_loc.y);
 
+    //warm up
+    cv::matchTemplate(source, target, result, cv::TM_CCOEFF_NORMED);
+        
     // opencv NCC test
     start_time = std::chrono::steady_clock::now();;
     for (int n = 0; n < TIMES; n++)
@@ -132,8 +138,8 @@ void del()
 int main()
 {
     //test_NCC();
-    test_integralImage();
-    //test_NCC_speed();
+    //test_integralImage();
+    test_NCC_speed();
     //del();
     system("pause");
     return 0;
