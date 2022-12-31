@@ -67,7 +67,7 @@ int NormalizedCrossCorrelation(
         cv::Mat sq_integral;//source 的像素平方的积分图
         integral(source,integral_image,sq_integral);
 
-        const double target_size = t_h * t_w;
+        const double target_size = (double)t_h * t_w;
 
         double target_mean = calculateMean(target);
         double target_var = calculateVariance(target,target_mean);
