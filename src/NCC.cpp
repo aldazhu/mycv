@@ -68,9 +68,13 @@ int NormalizedCrossCorrelation(
         integral(source,integral_image,sq_integral);
 
         const double target_size = (double)t_h * t_w;
-
-        double target_mean = calculateMean(target);
-        double target_var = calculateVariance(target,target_mean);
+        cv::Mat target_sum, target_sqsum;
+        double target_region_sum, target_region_sqsum;
+        integral(target, target_sum, target_sqsum);
+        getRegionSumFromIntegralImage(target_sum, 0, 0, target.cols-1, target.rows-1,target_region_sum);
+        getRegionSumFromIntegralImage(target_sqsum, 0, 0, target.cols-1, target.rows-1,target_region_sqsum);
+        double target_mean = target_region_sum / target_size;
+        double target_var = (target_region_sqsum - target_mean*target_region_sum)/target_size;
         double target_std_var = std::sqrt(target_var);
         result = cv::Mat::zeros(cv::Size(r_w,r_h),CV_32FC1);
 

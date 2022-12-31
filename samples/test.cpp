@@ -4,8 +4,68 @@
 #include <iostream>
 
 #include "spdlog/logger.h"
+#include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
+void cmp_speed()
+{
+    const int TIMES = 1000;
+
+    std::chrono::steady_clock::time_point start_time, end_time;
+    double abs_runtime = 0, integral_runtime = 0;
+    for (int size = 100; size < 1000; size += 100)
+    {
+        cv::Mat target = cv::Mat(cv::Size(size, size), CV_8UC1);
+        cv::randu(target, cv::Scalar(0), cv::Scalar(255));
+        spdlog::info("\n \n image size(h, w) = ({}, {})",target.rows,target.cols);
+        int t_h = target.rows;
+        int t_w = target.cols;
+        const double target_size = (double)t_h * t_w;
+        double target_region_sum, target_region_sqsum, target_mean, target_var, target_std_var;
+
+        cv::Mat target_sum, target_sqsum;
+        start_time = std::chrono::steady_clock::now();;
+        for (int times = 0; times < TIMES; times++)
+        {
+            //mycv::integral(target, target_sum, target_sqsum);
+            cv::integral(target, target_sum, target_sqsum,CV_64F,CV_64F);
+            
+            mycv::getRegionSumFromIntegralImage(target_sum, 0, 0, target.cols - 1, target.rows - 1, target_region_sum);
+            mycv::getRegionSumFromIntegralImage(target_sqsum, 0, 0, target.cols - 1, target.rows - 1, target_region_sqsum);
+            target_mean = target_region_sum / target_size;
+            target_var = (target_region_sqsum - target_mean * target_region_sum) / target_size;
+            target_std_var = std::sqrt(target_var);
+        }
+        end_time = std::chrono::steady_clock::now();
+
+        integral_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
+        spdlog::info("积分图的方法计算target的均值和方差");
+        spdlog::info("run {0} times,  use {1}ms", TIMES, integral_runtime);
+        spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
+        
+        cv::Mat mean_mat, stddev_mat;
+        start_time = std::chrono::steady_clock::now();;
+        for (int times = 0; times < TIMES; times++)
+        {
+            //target_mean = mycv::calculateMean(target);
+            //target_var = mycv::calculateVariance(target, target_mean);
+            //target_std_var = std::sqrt(target_var);
+            cv::meanStdDev(target, mean_mat, stddev_mat);
+
+        }
+        end_time = std::chrono::steady_clock::now();
+
+        abs_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
+        spdlog::info("直接计算target的均值和方差");
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        //spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
+        spdlog::info("opencv mean:{}, std variance:{}", mean_mat.at<double>(0), stddev_mat.at<double>(0));
+        
+        spdlog::info("abs_runtime / integral_image = {}",abs_runtime/integral_runtime);
+
+    }
+    
+}
 
 void test_error_code()
 {
@@ -72,6 +132,7 @@ void test_NCC_speed()
     double myncc_runtime = 0, opencv_runtime = 0;
 
     auto logger = spdlog::basic_logger_mt("NCC", log_path);
+    logger->set_level(spdlog::level::critical);
     // location
     double min_value, max_value;
     cv::Point min_loc, max_loc;
@@ -164,7 +225,8 @@ int main()
 {
     //test_NCC();
     //test_integralImage();
-    test_NCC_speed();
+    //test_NCC_speed();
+    cmp_speed();
     //del();
     system("pause");
     return 0;
