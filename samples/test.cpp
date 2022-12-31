@@ -64,7 +64,7 @@ void test_NCC_speed()
     const int TIMES = 1;
     std::string src_path = "data\\source.jfif";
     std::string target_path = "data\\target.jfif";
-    std::string log_path = "data\\ncc_speed.txt";
+    std::string log_path = "ncc_speed.txt";
     cv::Mat source, target, result;
     //source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     //target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
