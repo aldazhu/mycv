@@ -24,10 +24,10 @@ $$SAT(x,y) = SAT(x-1,y) + SAT(x,y-1) - SAT(x-1,y-1) + I(x,y)$$
 
 当要计算源图中的某个矩形区域的像素和时可以用查表的方式快速计算，构建好积分图后求区域和的复杂度将是$O(1)$。
 
-设在源图中的矩形$R$左上角坐标为$(tpx,tpy)$，左下角坐标为$(btx,bty)$,则计算该矩形区域内所有像素值和可以写为下式。
+设在源图中的矩形$R$左上角坐标为$(tpx,tpy)$，右下角坐标为$(btx,bty)$,则计算该矩形区域内所有像素值和可以写为下式。
 
 - 区域像素值之和
-$$sum = SAT(btx,bty) - SAT(tpx,bty) - SAT(btx,tpy) + SAT(tpx,tpy)$$
+$$sum = SAT(btx,bty) - SAT(tpx-1,bty) - SAT(btx,tpy-1) + SAT(tpx-1,tpy-1)$$
 - 区域均值
 $$mean = \frac{sum}{(bty-tpy+1)(btx-tpx+1)}$$
 

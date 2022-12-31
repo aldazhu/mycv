@@ -3,6 +3,9 @@
 #include <string>
 #include <iostream>
 
+#include "spdlog/logger.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 
 void test_error_code()
 {
@@ -15,6 +18,7 @@ void test_error_code()
 void test_integralImage()
 {
     std::string src_path = "data\\target.jfif";
+    
     cv::Mat source, result,opencv_sum,opencv_sqsum;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     mycv::integral(source, result);
@@ -57,54 +61,75 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 5;
+    const int TIMES = 1;
     std::string src_path = "data\\source.jfif";
     std::string target_path = "data\\target.jfif";
+    std::string log_path = "data\\ncc_speed.txt";
     cv::Mat source, target, result;
-    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
-    target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    //source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    //target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
     std::chrono::steady_clock::time_point start_time,end_time;
-    double runtime = 0;
+    double myncc_runtime = 0, opencv_runtime = 0;
 
+    auto logger = spdlog::basic_logger_mt("NCC", log_path);
     // location
     double min_value, max_value;
     cv::Point min_loc, max_loc;
-
-    // my NCC test
-    printf("source image size w,h = (%d,%d) \n",source.cols,source.rows);
-    printf("target image size w,h = (%d,%d) \n",target.cols,target.rows);
-
-    //warm up
-    mycv::NormalizedCrossCorrelation(source, target, result);
-
-    start_time = std::chrono::steady_clock::now();;
-    for (int n = 0; n < TIMES; n++)
+    for (int src_size = 500; src_size <= 1200; src_size += 100)
     {
+        source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
+        target = cv::Mat(cv::Size(100, 100), CV_8UC1);
+        cv::randu(source,cv::Scalar(0),cv::Scalar(255));
+        cv::randu(target,cv::Scalar(0),cv::Scalar(255));
+        logger->info("src_size:(h,w)=({0},{1}), target_size:(h,w)=({2},{3})",
+            source.rows,source.cols,target.rows,target.cols);
+        // my NCC test
+        printf("source image size w,h = (%d,%d) \n", source.cols, source.rows);
+        printf("target image size w,h = (%d,%d) \n", target.cols, target.rows);
+
+        //warm up
         mycv::NormalizedCrossCorrelation(source, target, result);
-    }
-    end_time = std::chrono::steady_clock::now();;
-    runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
-    printf("my NCC run %d times,average use %f ms \n",TIMES,runtime);
 
-    cv::minMaxLoc(result, &min_value,&max_value,&min_loc,&max_loc);
-    printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
-        min_value,min_loc.x,min_loc.y,max_value,max_loc.x,max_loc.y);
+        start_time = std::chrono::steady_clock::now();;
+        for (int n = 0; n < TIMES; n++)
+        {
+            mycv::NormalizedCrossCorrelation(source, target, result);
+        }
+        end_time = std::chrono::steady_clock::now();;
+        myncc_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
+        printf("my NCC run %d times,average use %f ms \n", TIMES, myncc_runtime);
 
-    //warm up
-    cv::matchTemplate(source, target, result, cv::TM_CCOEFF_NORMED);
-        
-    // opencv NCC test
-    start_time = std::chrono::steady_clock::now();;
-    for (int n = 0; n < TIMES; n++)
-    {
-        cv::matchTemplate(source,target,result,cv::TM_CCOEFF_NORMED);
+        cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+
+        logger->info("my NCC run {0} times,average use {1} ms \n", TIMES, myncc_runtime);
+        logger->info("my NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
+            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+
+        //warm up
+        cv::matchTemplate(source, target, result, cv::TM_CCOEFF_NORMED);
+
+        // opencv NCC test
+        start_time = std::chrono::steady_clock::now();;
+        for (int n = 0; n < TIMES; n++)
+        {
+            cv::matchTemplate(source, target, result, cv::TM_CCOEFF_NORMED);
+        }
+        end_time = std::chrono::steady_clock::now();;
+        opencv_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
+        printf("opencv NCC run %d times,average use %f ms \n", TIMES, opencv_runtime);
+        cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+
+
+        logger->info("opencv NCC run {0} times,average use {1} ms \n", TIMES, opencv_runtime);
+        logger->info("opencv NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
+            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+        logger->info("speed : myncc_runtime / opencv_runtime = {}", (int)(myncc_runtime / opencv_runtime));
     }
-    end_time = std::chrono::steady_clock::now();;
-    runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
-    printf("opencv NCC run %d times,average use %f ms \n", TIMES, runtime);
-    cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
-    printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
-        min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+  
 
 }
 
@@ -124,7 +149,7 @@ void test_NCC()
     result += 1;
     result *= 128;
     result.convertTo(result, CV_8U);
-    cv::imwrite("data\\result.png", result);
+    //cv::imwrite("data\\result.png", result);
 }
 
 void del()

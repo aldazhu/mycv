@@ -1,0 +1,80 @@
+[2022-12-31 16:48:02.162] [NCC] [info] src_size:(h,w)=(500,500), target_size:(h,w)=(100,100)
+[2022-12-31 16:48:04.979] [NCC] [info] my NCC run 1 times,average use 1396 ms 
+
+[2022-12-31 16:48:04.979] [NCC] [info] my NCC min_value = -0.04535972699522972, min_loc(x, y) = (316, 121), 	 max_value = 0.04434043914079666, max_loc(x, y) = (213, 264)
+
+[2022-12-31 16:48:04.987] [NCC] [info] opencv NCC run 1 times,average use 3 ms 
+
+[2022-12-31 16:48:04.987] [NCC] [info] opencv NCC min_value = -0.04535961523652077, min_loc(x, y) = (316, 121), 	 max_value = 0.04434032738208771, max_loc(x, y) = (213, 264)
+
+[2022-12-31 16:48:04.987] [NCC] [info] speed : myncc_runtime / opencv_runtime = 465
+[2022-12-31 16:48:04.988] [NCC] [info] src_size:(h,w)=(600,600), target_size:(h,w)=(100,100)
+[2022-12-31 16:48:09.362] [NCC] [info] my NCC run 1 times,average use 2180 ms 
+
+[2022-12-31 16:48:09.362] [NCC] [info] my NCC min_value = -0.04651434347033501, min_loc(x, y) = (186, 308), 	 max_value = 0.044514089822769165, max_loc(x, y) = (444, 178)
+
+[2022-12-31 16:48:09.376] [NCC] [info] opencv NCC run 1 times,average use 7 ms 
+
+[2022-12-31 16:48:09.376] [NCC] [info] opencv NCC min_value = -0.04651458561420441, min_loc(x, y) = (186, 308), 	 max_value = 0.044514402747154236, max_loc(x, y) = (444, 178)
+
+[2022-12-31 16:48:09.376] [NCC] [info] speed : myncc_runtime / opencv_runtime = 311
+[2022-12-31 16:48:09.377] [NCC] [info] src_size:(h,w)=(700,700), target_size:(h,w)=(100,100)
+[2022-12-31 16:48:15.644] [NCC] [info] my NCC run 1 times,average use 3132 ms 
+
+[2022-12-31 16:48:15.644] [NCC] [info] my NCC min_value = -0.044218577444553375, min_loc(x, y) = (428, 192), 	 max_value = 0.042700592428445816, max_loc(x, y) = (347, 262)
+
+[2022-12-31 16:48:15.678] [NCC] [info] opencv NCC run 1 times,average use 8 ms 
+
+[2022-12-31 16:48:15.678] [NCC] [info] opencv NCC min_value = -0.044219017028808594, min_loc(x, y) = (428, 192), 	 max_value = 0.042700834572315216, max_loc(x, y) = (347, 262)
+
+[2022-12-31 16:48:15.678] [NCC] [info] speed : myncc_runtime / opencv_runtime = 391
+[2022-12-31 16:48:15.679] [NCC] [info] src_size:(h,w)=(800,800), target_size:(h,w)=(100,100)
+[2022-12-31 16:48:24.338] [NCC] [info] my NCC run 1 times,average use 4383 ms 
+
+[2022-12-31 16:48:24.338] [NCC] [info] my NCC min_value = -0.04547286406159401, min_loc(x, y) = (452, 292), 	 max_value = 0.044728003442287445, max_loc(x, y) = (298, 175)
+
+[2022-12-31 16:48:24.363] [NCC] [info] opencv NCC run 1 times,average use 11 ms 
+
+[2022-12-31 16:48:24.363] [NCC] [info] opencv NCC min_value = -0.04547308385372162, min_loc(x, y) = (452, 292), 	 max_value = 0.0447281152009964, max_loc(x, y) = (298, 175)
+
+[2022-12-31 16:48:24.363] [NCC] [info] speed : myncc_runtime / opencv_runtime = 398
+[2022-12-31 16:48:24.365] [NCC] [info] src_size:(h,w)=(900,900), target_size:(h,w)=(100,100)
+[2022-12-31 16:48:41.385] [NCC] [info] my NCC run 1 times,average use 10234 ms 
+
+[2022-12-31 16:48:41.385] [NCC] [info] my NCC min_value = -0.04639014974236488, min_loc(x, y) = (716, 347), 	 max_value = 0.043344635516405106, max_loc(x, y) = (591, 252)
+
+[2022-12-31 16:48:41.431] [NCC] [info] opencv NCC run 1 times,average use 28 ms 
+
+[2022-12-31 16:48:41.431] [NCC] [info] opencv NCC min_value = -0.04639048129320145, min_loc(x, y) = (716, 347), 	 max_value = 0.04334452375769615, max_loc(x, y) = (591, 252)
+
+[2022-12-31 16:48:41.431] [NCC] [info] speed : myncc_runtime / opencv_runtime = 365
+[2022-12-31 16:48:41.437] [NCC] [info] src_size:(h,w)=(1000,1000), target_size:(h,w)=(100,100)
+[2022-12-31 16:49:07.229] [NCC] [info] my NCC run 1 times,average use 12576 ms 
+
+[2022-12-31 16:49:07.229] [NCC] [info] my NCC min_value = -0.046292442828416824, min_loc(x, y) = (727, 726), 	 max_value = 0.04802790284156799, max_loc(x, y) = (664, 237)
+
+[2022-12-31 16:49:07.288] [NCC] [info] opencv NCC run 1 times,average use 22 ms 
+
+[2022-12-31 16:49:07.288] [NCC] [info] opencv NCC min_value = -0.04629262909293175, min_loc(x, y) = (727, 726), 	 max_value = 0.048027992248535156, max_loc(x, y) = (664, 237)
+
+[2022-12-31 16:49:07.288] [NCC] [info] speed : myncc_runtime / opencv_runtime = 571
+[2022-12-31 16:49:07.291] [NCC] [info] src_size:(h,w)=(1100,1100), target_size:(h,w)=(100,100)
+[2022-12-31 16:49:38.530] [NCC] [info] my NCC run 1 times,average use 15305 ms 
+
+[2022-12-31 16:49:38.530] [NCC] [info] my NCC min_value = -0.04782490432262421, min_loc(x, y) = (116, 699), 	 max_value = 0.04907459765672684, max_loc(x, y) = (319, 546)
+
+[2022-12-31 16:49:38.613] [NCC] [info] opencv NCC run 1 times,average use 42 ms 
+
+[2022-12-31 16:49:38.613] [NCC] [info] opencv NCC min_value = -0.047824058681726456, min_loc(x, y) = (116, 699), 	 max_value = 0.049074746668338776, max_loc(x, y) = (319, 546)
+
+[2022-12-31 16:49:38.613] [NCC] [info] speed : myncc_runtime / opencv_runtime = 364
+[2022-12-31 16:49:38.619] [NCC] [info] src_size:(h,w)=(1200,1200), target_size:(h,w)=(100,100)
+[2022-12-31 16:50:01.205] [NCC] [info] my NCC run 1 times,average use 10509 ms 
+
+[2022-12-31 16:50:01.205] [NCC] [info] my NCC min_value = -0.0480506494641304, min_loc(x, y) = (1095, 47), 	 max_value = 0.05138896778225899, max_loc(x, y) = (95, 634)
+
+[2022-12-31 16:50:01.251] [NCC] [info] opencv NCC run 1 times,average use 22 ms 
+
+[2022-12-31 16:50:01.251] [NCC] [info] opencv NCC min_value = -0.048050373792648315, min_loc(x, y) = (1095, 47), 	 max_value = 0.05138833820819855, max_loc(x, y) = (95, 634)
+
+[2022-12-31 16:50:01.251] [NCC] [info] speed : myncc_runtime / opencv_runtime = 477
