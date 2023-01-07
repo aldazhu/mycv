@@ -90,15 +90,15 @@ $$\sigma(T)=\sqrt{var(S_{x,y})}=\sqrt{\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}{(T(
 
 - source
 
-![source](../data/source.jfif "source")
+![source](../../data/source.jfif "source")
 
 - target
 
-![target](../data/target.jfif "target")
+![target](../../data/target.jfif "target")
 
 - result
 
-![result](../data/result.png "result")
+![result](../../data/result.png "result")
 
 可以看到在目标处得到最大值，也就是正确匹配到了目标图。
 

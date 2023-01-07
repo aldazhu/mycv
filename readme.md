@@ -34,3 +34,14 @@ opencv NCC run 10 times,average use 15.000000 ms
 min_value=-0.431418 , min_loc(x,y)=(799,210),    max_value=0.998322,max_loc(x,y)=(393,286)
 ```
 opencv的速度是我的316.06倍。
+
+采用FFT加速
+```
+source image size w,h = (1095,680)
+target image size w,h = (89,91)
+my NCC run 10 times,average use 35.000000 ms
+min_value=-0.431418 , min_loc(x,y)=(799,210),    max_value=0.998324,max_loc(x,y)=(393,286)
+opencv NCC run 10 times,average use 13.000000 ms
+min_value=-0.431418 , min_loc(x,y)=(799,210),    max_value=0.998322,max_loc(x,y)=(393,286)
+```
+opencv的速度是我的3倍。

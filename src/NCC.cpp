@@ -68,15 +68,10 @@ int NormalizedCrossCorrelation(
         integral(source,integral_image,sq_integral);
 
         const double target_size = (double)t_h * t_w;
-        cv::Mat target_sum, target_sqsum;
-        double target_region_sum, target_region_sqsum;
-        integral(target, target_sum, target_sqsum);
-        getRegionSumFromIntegralImage(target_sum, 0, 0, target.cols-1, target.rows-1,target_region_sum);
-        getRegionSumFromIntegralImage(target_sqsum, 0, 0, target.cols-1, target.rows-1,target_region_sqsum);
-        double target_mean = target_region_sum / target_size;
-        double target_var = (target_region_sqsum - target_mean*target_region_sum)/target_size;
+        double target_mean = calculateMean(target);
+        double target_var = calculateVariance(target, target_mean);
         double target_std_var = std::sqrt(target_var);
-        result = cv::Mat::zeros(cv::Size(r_w,r_h),CV_32FC1);
+        result = cv::Mat::zeros(cv::Size(r_w, r_h), CV_32FC1);
 
         double region_sum = 0;
         double region_sq_sum = 0;
@@ -107,6 +102,93 @@ int NormalizedCrossCorrelation(
         return kSuccess;
     }
 
+
+/**
+ * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时
+ * 用(Pearson)相关系数来度量。
+ * r=cov(X,Y)/(sigma(X) * sigma(Y))
+ * 其中cov(X,Y): 表示两个变量的协方差
+ * cov(X,Y) = E[(X-E(x)) * (Y-E(Y))] = E(XY) - E(x)E(Y)
+ * sigma(X): 表示X变量的标准差
+ * sigma(Y): 表示Y变量的标准差
+ *
+ * @param source : 搜索图CV_8UC1格式
+ * @param target ：模板图CV_8UC1格式
+ * @param result : 匹配结果的map图
+ * @return int : 程序运行的状态码
+ */
+int NormalizedCrossCorrelationFFT(
+	const cv::Mat &source,
+	const cv::Mat &target,
+	cv::Mat &result
+)
+{
+	if (source.empty() || target.empty())
+	{
+		MYCV_ERROR(kImageEmpty, "NCC empty input image");
+		return kImageEmpty;
+	}
+	int H = source.rows;
+	int W = source.cols;
+	int t_h = target.rows;
+	int t_w = target.cols;
+	if (t_h > H || t_w > W)
+	{
+		MYCV_ERROR(kBadSize, "NCC source image size should larger than targe image");
+		return kBadSize;
+	}
+
+	//r = cov(X,Y)/(sigma(X) * sigma(Y))
+	//sigma(X) = sqrt(var(X))
+	int r_h = H - t_h + 1; //结果图的高度
+	int r_w = W - t_w + 1;
+	cv::Mat integral_image;//source的积分图
+	cv::Mat sq_integral;//source 的像素平方的积分图
+	integral(source, integral_image, sq_integral);
+	//cv::integral(source, integral_image, sq_integral, CV_64FC1, CV_64FC1);
+
+	//计算模板图在source上的卷积
+	cv::Mat conv;
+	convFFT(source, target, conv);
+
+	const double target_size = t_h * t_w;
+
+	double target_mean = calculateMean(target);
+	double target_var = calculateVariance(target, target_mean);
+	double target_std_var = std::sqrt(target_var);
+	result = cv::Mat::zeros(cv::Size(r_w, r_h), CV_32FC1);
+
+	double region_sum = 0;
+	double region_sq_sum = 0;
+	for (int row = 0; row < r_h; row++)
+	{
+		float * p = result.ptr<float>(row);
+		float * convp = conv.ptr<float>(row);
+		for (int col = 0; col < r_w; col++)
+		{
+			cv::Rect ROI(col, row, t_w, t_h);//source上和目标图匹配的子图
+			cv::Mat temp = source(ROI);
+			//计算source中对应子块的均值
+			getRegionSumFromIntegralImage(integral_image, col, row, col + t_w - 1, row + t_h - 1, region_sum);
+			double temp_mean = region_sum / target_size;
+
+			//计算两个图的协方差
+			//cov(X,Y) = E(X*Y) - E(X)*E(Y)
+			double cov = (*(convp + col)) / target_size - temp_mean * target_mean;
+			//double cov = calculateCovariance(temp, target, temp_mean, target_mean);
+
+			//计算source中对应子块的方差
+			getRegionSumFromIntegralImage(sq_integral, col, row, col + t_w - 1, row + t_h - 1, region_sq_sum);
+
+			double temp_var = (region_sq_sum - temp_mean * region_sum) / target_size;
+			double temp_std_var = std::sqrt(temp_var);
+			p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+		}
+	}
+
+
+	return kSuccess;
+}
 
 /**
  * @brief 计算图像上ROI区域内的均值
@@ -277,6 +359,52 @@ double calculateMean(const cv::Mat &image)
 }
 
 
+/**
+ * @brief 用FFT实现两个图像的卷积，src: H*W ,kernel: h*w,
+ * 把卷积的过程想象成kernel在src上滑动，记在src上和kernel对应的子图像块为Sxy,
+ * conv(x,y) = \sigma \sigma Sxy(i,j)*kernel(i,j),i in [0,h) ,j in [0,w)
+ * output: (H-h+1)*(W-w+1)
+ * 
+ * @param src  : CV_8UC1的图像
+ * @param kernel  : CV_8UC1的图像
+ * @param output  : CV_32FC1的图像
+ * @return int 
+ */
+int convFFT(const cv::Mat &src, const cv::Mat &kernel, cv::Mat& output)
+{
+	if (src.empty() || kernel.empty())
+	{
+        MYCV_ERROR(kImageEmpty,"input is empty");
+		return kImageEmpty;
+	}
+	int dft_h = cv::getOptimalDFTSize(src.rows + kernel.rows - 1);
+	int dft_w = cv::getOptimalDFTSize(src.cols + kernel.cols - 1);
+
+	cv::Mat dft_src = cv::Mat::zeros(dft_h, dft_w, CV_32F);
+	cv::Mat dft_kernel = cv::Mat::zeros(dft_h, dft_w, CV_32F);
+
+	cv::Mat dft_src_part = dft_src(cv::Rect(0, 0, src.cols, src.rows));
+	cv::Mat dft_kernel_part = dft_kernel(cv::Rect(0, 0, kernel.cols, kernel.rows));
+
+	//把src,kernel分别拷贝放到dft_src,dft_kernel左上角
+	src.convertTo(dft_src_part, dft_src_part.type());
+	kernel.convertTo(dft_kernel_part, dft_kernel_part.type());
+
+	cv::dft(dft_src, dft_src, 0, dft_src.rows);
+	cv::dft(dft_kernel, dft_kernel, 0, dft_kernel.rows);
+
+	cv::mulSpectrums(dft_src, dft_kernel, dft_src, 0, true);
+	
+	int output_h = abs(src.rows - kernel.rows) + 1;
+	int output_w = abs(src.cols - kernel.cols) + 1;
+	cv::dft(dft_src, dft_src, cv::DFT_INVERSE + cv::DFT_SCALE, output_h);;
+
+	cv::Mat corr = dft_src(cv::Rect(0, 0, output_w,output_h));
+
+	output = corr;
+
+    return kSuccess;
+}
 
 
 } //end namespace mycv

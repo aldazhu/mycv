@@ -121,7 +121,7 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 1;
+    const int TIMES = 10;
     std::string src_path = "data\\source.jfif";
     std::string target_path = "data\\target.jfif";
     std::string log_path = "ncc_speed.txt";
@@ -149,12 +149,14 @@ void test_NCC_speed()
         printf("target image size w,h = (%d,%d) \n", target.cols, target.rows);
 
         //warm up
-        mycv::NormalizedCrossCorrelation(source, target, result);
+        //mycv::NormalizedCrossCorrelation(source, target, result);
+        mycv::NormalizedCrossCorrelationFFT(source, target, result);
 
         start_time = std::chrono::steady_clock::now();;
         for (int n = 0; n < TIMES; n++)
         {
-            mycv::NormalizedCrossCorrelation(source, target, result);
+            //mycv::NormalizedCrossCorrelation(source, target, result);
+            mycv::NormalizedCrossCorrelationFFT(source, target, result);
         }
         end_time = std::chrono::steady_clock::now();;
         myncc_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
@@ -225,8 +227,8 @@ int main()
 {
     //test_NCC();
     //test_integralImage();
-    //test_NCC_speed();
-    cmp_speed();
+    test_NCC_speed();
+    //cmp_speed();
     //del();
     system("pause");
     return 0;
