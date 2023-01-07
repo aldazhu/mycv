@@ -11,7 +11,9 @@ $$f(x)*g(x)=F(\omega)\cdot G(\omega)$$
 ### 1.2 空域卷积和频域乘积的复杂度
 假设两个图像分别为$A_{N\times N},B_{M\times M},M\leq N $,则在空域的卷积的时间复杂度是$$O(N^2*M^2)$$
 
-FFT的时间复杂度$$O(N^2\log N)$$
+FFT的时间复杂度
+$$O(N^2\log N)$$
+
 注意这里的复杂度没有错，有人可能会觉得应该是$O(N^2\log N^2)$,但是在表示复杂度的$O()$表示法中可以忽略系数只关注最高阶的项数，$O(N^2\log N^2)=O(2*N^2\log N)=O(N^2\log N)$。
 
 ![big O](../../data/bigO_complexity.png)
@@ -26,6 +28,7 @@ FFT的时间复杂度$$O(N^2\log N)$$
 |$n^2$|100|400|
 |$2^n$|1024|1048576|
 |$n!$|3628800|2,432,902,008,176,640,000|
+
 上面两种方式的复杂度可以看成是$n^2 ,n\log n$的差别，可以看到当两个要卷积图像都比较大时采用FFT加速的方式还是可以获得非常可观的效果。
 
 ## 2. opencv中的DFT
@@ -99,18 +102,24 @@ int convFFT(const cv::Mat &src, const cv::Mat &kernel, cv::Mat& output)
 
 ## 3. FFT用于NCC
 NCC前情提要
-$记T_{m\times n}为目标图(target)$,$S_{M\times N}$为源搜索图(source),$S_{x,y}$为S中以点$(x,y)$为左上角的和T大小相同的子图，$R_{(M-m+1)\times (N-n+1)}$为匹配的结果图，则$$R(x,y)=\frac{cov(S_{x,y},T)}{\sigma(S_{x,y})\sigma(T)}$$  
+$记T_{m\times n}为目标图(target)$,$S_{M\times N}$为源搜索图(source),$S_{x,y}$为S中以点$(x,y)$为左上角的和T大小相同的子图，$R_{(M-m+1)\times (N-n+1)}$为匹配的结果图，则
 
-其中$$
+$$R(x,y)=\frac{cov(S_{x,y},T)}{\sigma(S_{x,y})\sigma(T)}$$  
+
+其中
+$$
 \begin{aligned}
 cov(S_{x,y},T)  &=E(S_{x,y}T)-E(S_{x,y})E(T)\\
                 &=\frac{\Sigma_{i=1}^{m}\Sigma_{j=1}^{n}S_{x,y}(i,j)T(i,j)}{mn} - \bar{S_{x,y}}\bar{T}
 \end{aligned}
 $$
+
 图像块$S_{x,y}$的均值计算过程已经用积分图加速过了，NCC的速度从opencv的八百分之一提升到三百分之一。在协方差的计算过程中一直会用到模板图和$S_{x,y}$的逐像素相乘再求和的结果，就是下式
+
 $$
 \Sigma_{i=1}^{m}\Sigma_{j=1}^{n}S_{x,y}(i,j)T(i,j)
 $$
+
 从整个图像的计算过程来看这就是卷积！而卷积天然就适合用FFT来加速。用一个矩阵来存储模板和源图的卷积结果，上面的计算式就变为访问卷积结果某个位置的值。
 
 ## 4. 测试结果
