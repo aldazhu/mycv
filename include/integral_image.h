@@ -45,6 +45,8 @@ int integral(const cv::Mat &image,cv::Mat &integral_image,cv::Mat &integral_sq);
 
 int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq);
 
+int integralAVX(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq);
+
 /**
  * @brief Get the Region sum From Integral Image or sq integral image
  * 原图上的区域为tpx，tpy,btx,bty,在积分图或者平方的积分图上的位置为tpx+1,tpy+1,btx+1,bty+1

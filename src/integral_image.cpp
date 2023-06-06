@@ -126,6 +126,26 @@ int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral
 }
 
 
+
+int integralAVX(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq)
+{
+	if (image.empty())
+	{
+		MYCV_ERROR(kImageEmpty, "image empty");
+		return kImageEmpty;
+	}
+
+	int h = image.rows;
+	int w = image.cols;
+	integral_image = cv::Mat::zeros(cv::Size(w + 1, h + 1), CV_32FC1);
+	integral_sq = cv::Mat::zeros(cv::Size(w + 1, h + 1), CV_64FC1);
+
+	
+
+	return kSuccess;
+
+}
+
 /**
  * @brief Get the Region sum From Integral Image or sq integral image
  * 原图上的区域为tpx，tpy,btx,bty,在积分图或者平方的积分图上的位置为tpx+1,tpy+1,btx+1,bty+1

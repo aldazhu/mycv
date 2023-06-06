@@ -52,7 +52,7 @@ void showImage(const cv::Mat& image, const std::string& name, int waitMode,int w
         return;
     }
     cv::Mat visual = image;
-    if (image.type() == CV_32F || image.type() == CV_64F)
+    if (image.type() == CV_32F || image.type() == CV_64F || image.type() == CV_32S)
     {
         cv::normalize(image, visual, 1.0,0.0, cv::NORM_MINMAX);
         visual.convertTo(visual, CV_8U, 255,0);

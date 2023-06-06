@@ -84,14 +84,14 @@ void test_integralImage()
     cv::Mat source, result,opencv_sum,opencv_sqsum;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     mycv::integral(source, result);
-    cv::integral(source, opencv_sum,opencv_sqsum, CV_64F,CV_64F);
+    cv::integral(source, opencv_sum,opencv_sqsum, CV_32F,CV_64F);
     mycv::showImage(source,"source");
     mycv::showImage(opencv_sum,"opencv integral");
     mycv::showImage(result, "integral",0);
 
     //another integral image
     cv::Mat integral_image, integral_sq;
-    mycv::integral(source, integral_image, integral_sq);
+    mycv::integralIPP(source, integral_image, integral_sq);
 
     
     
@@ -115,8 +115,8 @@ void test_integralImage()
     integral_image.convertTo(integral_image, CV_8U, 255, 0);
     cv::normalize(integral_sq, integral_sq, 1.0, 0.0, cv::NORM_MINMAX);
     integral_sq.convertTo(integral_sq, CV_8U, 255, 0);
-    cv::imwrite("data\\integral.png", integral_image);
-    cv::imwrite("data\\integral_sq.png", integral_sq);
+    //cv::imwrite("data\\integral.png", integral_image);
+    //cv::imwrite("data\\integral_sq.png", integral_sq);
 
 
 }
@@ -251,11 +251,65 @@ void Test_IntegralSpeed()
 }
 	
 
+#include <opencv2/opencv.hpp>
+#include <immintrin.h> // 包含AVX指令集
+
+using namespace cv;
+
+void integral_avx(Mat& src, Mat& dst)
+{
+	int rows = src.rows, cols = src.cols;
+	dst = Mat::zeros(rows + 1, cols + 1, CV_32FC1); // 初始化积分图
+	if (src.type() == CV_8U)
+	{
+		src.convertTo(src, CV_32FC1);
+	}
+
+	// 按行计算积分图
+	for (int i = 1; i <= rows; ++i)
+	{
+		float* sdata = src.ptr<float>(i - 1);
+		float* idata = dst.ptr<float>(i) + 1;
+		float* idata_prev = dst.ptr<float>(i - 1) + 1;
+		__m256 row_sum = _mm256_setzero_ps(); // 初始化AVX向量
+
+		// 按8个像素为一组进行计算
+		for (int j = 0; j < cols; j += 8)
+		{
+			__m256 data = _mm256_loadu_ps((float*)(sdata + j)); // 加载8个像素值到AVX向量
+			row_sum = _mm256_add_ps(row_sum, data); // 对8个像素值求和
+			__m256 sum = _mm256_add_ps(row_sum, _mm256_loadu_ps((float*)(idata_prev + j))); // 前一行的累计和加上当前行的像素和
+			_mm256_storeu_ps((float*)(idata + j), sum); // 将结果存储到积分图中
+		}
+	}
+}
+
+int Test_IntegralAVX()
+{
+	Mat src = imread("H:/myProjects/work/mycv-master/mycv-master/data/source.jpg", IMREAD_GRAYSCALE);
+	if (src.empty())
+		return -1;
+
+	Mat integral_opencv, integral_avx2;
+	double t1 = (double)getTickCount();
+	integral(src, integral_opencv, CV_32F); // 使用OpenCV自带的积分图函数计算
+	double t2 = (double)getTickCount();
+	integral_avx(src, integral_avx2); // 使用AVX加速的积分图计算函数计算
+	double t3 = (double)getTickCount();
+	mycv::showImage( integral_opencv, "opencv integral");
+	mycv::showImage( integral_avx2, "avx2 integral",0);
+	std::cout << "OpenCV自带函数用时: " << (t2 - t1) / getTickFrequency() << " s" << std::endl;
+	std::cout << "AVX加速用时: " << (t3 - t2) / getTickFrequency() << " s" << std::endl;
+
+	return 0;
+}
+
 int main()
 {
+	Test_IntegralAVX();
     //test_NCC();
     //test_integralImage();
-	Test_IntegralSpeed();
+	//Test_IntegralSpeed();
     //test_NCC_speed();
     //cmp_speed();
     //del();
