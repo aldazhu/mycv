@@ -7,6 +7,10 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
+#include "mycv.hpp"
+
+#include "threshold.h"
+
 #include "utils.h"
 
 void cmp_speed()
@@ -73,7 +77,7 @@ void test_error_code()
 {
     int code = mycv::kImageEmpty;
     std::string msg = "test error";
-    MYCV_ERROR(code, msg);
+    MYCV_ERROR2(code, msg);
 
 }
 
@@ -217,6 +221,75 @@ void test_NCC()
     //cv::imwrite("data\\result.png", result);
 }
 
+void test_OTSU()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+   
+    cv::Mat source, result,opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    int opencv_th = cv::threshold(source, opencv_result,0,255, cv::THRESH_OTSU | cv::THRESH_BINARY);
+    std::cout << "opencv thresh : " << opencv_th << std::endl;
+    mycv::showImage(opencv_result, "opencv result");
+
+    int th = mycv::OTSU(source, result,0);
+    std::cout << "otsu thresh : " << th << std::endl;
+    mycv::showImage(source, "source", 1);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, 1);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, 2);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, -1);
+    mycv::showImage(result, "result", 0);
+
+
+}
+
+void test_OTSU_speed()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+
+    cv::Mat source, result, opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+
+    constexpr int kTimes = 1000;
+    std::cout << "opencv OTSU:";
+
+    mycv::Timer_us t;
+    for (int i = 0; i < kTimes; ++i)
+        cv::threshold(source, opencv_result, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    t.Duration();
+
+    std::cout << "mycv OTSU:";
+    t.Restart();
+    for (int i = 0; i < kTimes; ++i)
+        mycv::OTSU(source, result,0);
+    t.Duration();
+
+
+}
+
+void test_hist()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+
+    cv::Mat source, result, opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+
+    int hist[256] = { 0 };
+    int hist_avx[256] = { 0 };
+    mycv::GetHist(source, hist);
+    mycv::GetHistAVX(source, hist_avx);
+
+    for (int i = 0; i < 256; ++i)
+    {
+        std::cout << hist[i] << "," << hist_avx[i] << std::endl;
+    }
+
+
+}
+
+
 void del()
 {
     std::cout << DBL_MAX << std::endl;
@@ -225,7 +298,7 @@ void del()
 }
 
 
-void Test_IntegralSpeed()
+void test_IntegralSpeed()
 {
 	mycv::Timer_ms t;
 	constexpr int kTimes = 10;
@@ -256,60 +329,17 @@ void Test_IntegralSpeed()
 
 using namespace cv;
 
-void integral_avx(Mat& src, Mat& dst)
-{
-	int rows = src.rows, cols = src.cols;
-	dst = Mat::zeros(rows + 1, cols + 1, CV_32FC1); // 初始化积分图
-	if (src.type() == CV_8U)
-	{
-		src.convertTo(src, CV_32FC1);
-	}
-
-	// 按行计算积分图
-	for (int i = 1; i <= rows; ++i)
-	{
-		float* sdata = src.ptr<float>(i - 1);
-		float* idata = dst.ptr<float>(i) + 1;
-		float* idata_prev = dst.ptr<float>(i - 1) + 1;
-		__m256 row_sum = _mm256_setzero_ps(); // 初始化AVX向量
-
-		// 按8个像素为一组进行计算
-		for (int j = 0; j < cols; j += 8)
-		{
-			__m256 data = _mm256_loadu_ps((float*)(sdata + j)); // 加载8个像素值到AVX向量
-			row_sum = _mm256_add_ps(row_sum, data); // 对8个像素值求和
-			__m256 sum = _mm256_add_ps(row_sum, _mm256_loadu_ps((float*)(idata_prev + j))); // 前一行的累计和加上当前行的像素和
-			_mm256_storeu_ps((float*)(idata + j), sum); // 将结果存储到积分图中
-		}
-	}
-}
-
-int Test_IntegralAVX()
-{
-	Mat src = imread("H:/myProjects/work/mycv-master/mycv-master/data/source.jpg", IMREAD_GRAYSCALE);
-	if (src.empty())
-		return -1;
-
-	Mat integral_opencv, integral_avx2;
-	double t1 = (double)getTickCount();
-	integral(src, integral_opencv, CV_32F); // 使用OpenCV自带的积分图函数计算
-	double t2 = (double)getTickCount();
-	integral_avx(src, integral_avx2); // 使用AVX加速的积分图计算函数计算
-	double t3 = (double)getTickCount();
-	mycv::showImage( integral_opencv, "opencv integral");
-	mycv::showImage( integral_avx2, "avx2 integral",0);
-	std::cout << "OpenCV自带函数用时: " << (t2 - t1) / getTickFrequency() << " s" << std::endl;
-	std::cout << "AVX加速用时: " << (t3 - t2) / getTickFrequency() << " s" << std::endl;
-
-	return 0;
-}
 
 int main()
 {
-	Test_IntegralAVX();
+    //test_OTSU();
+    test_OTSU_speed();
+    //test_hist();
+
+	//test_IntegralAVX();
     //test_NCC();
     //test_integralImage();
-	//Test_IntegralSpeed();
+	//test_IntegralSpeed();
     //test_NCC_speed();
     //cmp_speed();
     //del();

@@ -31,7 +31,8 @@ enum error_code{
     kOutOfRange,
     kBadSize,
     kBadDepth,
-    kBadInput
+    kBadInput,
+	kNotImplement,
 };
 
 /**
@@ -77,7 +78,7 @@ double compareArray(TA* A, TB* B,int n)
 {
     if(nullptr == A || nullptr == B)
     {
-        MYCV_ERROR(mycv::kBadInput,"input array is none");
+        MYCV_ERROR2(mycv::kBadInput,"input array is none");
         throw "input array is none!";
     }
 

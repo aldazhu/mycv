@@ -45,7 +45,7 @@ int integral(const cv::Mat &image,cv::Mat &integral_image,cv::Mat &integral_sq);
 
 int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq);
 
-int integralAVX(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq);
+
 
 /**
  * @brief Get the Region sum From Integral Image or sq integral image

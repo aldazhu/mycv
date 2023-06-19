@@ -28,7 +28,7 @@ int integral(const cv::Mat &image,cv::Mat &integral_image)
 {
     if(image.empty())
     {
-        MYCV_ERROR(kImageEmpty,"image empty");
+        MYCV_ERROR2(kImageEmpty,"image empty");
         return kImageEmpty;
     }
 
@@ -68,7 +68,7 @@ int integral(const cv::Mat &image,cv::Mat &integral_image,cv::Mat &integral_sq)
 {
      if(image.empty())
     {
-        MYCV_ERROR(kImageEmpty,"image empty");
+        MYCV_ERROR2(kImageEmpty,"image empty");
         return kImageEmpty;
     }
 
@@ -101,7 +101,7 @@ int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral
 {
 	if (image.empty())
 	{
-		MYCV_ERROR(kImageEmpty, "image empty");
+		MYCV_ERROR2(kImageEmpty, "image empty");
 		return kImageEmpty;
 	}
 
@@ -111,7 +111,7 @@ int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral
 	integral_sq = cv::Mat::zeros(cv::Size(w + 1, h + 1), CV_64FC1);
 
 	// IPPAPI(IppStatus, ippiSqrIntegral_8u32f64f_C1R, (const Ipp8u* pSrc, int srcStep, Ipp32f* pDst, int dstStep, Ipp64f* pSqr, int sqrStep, IppiSize roiSize, Ipp32f val, Ipp64f valSqr))
-	
+	/*
 	IppiSize size = { w, h };
 
 	ippiSqrIntegral_8u32f64f_C1R(
@@ -119,32 +119,12 @@ int integralIPP(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral
 		(Ipp32f*)integral_image.data, integral_image.step,
 		(Ipp64f*)integral_sq.data, integral_sq.step,
 		size,0,0
-		);
+		);*/
 
 	return kSuccess;
 
 }
 
-
-
-int integralAVX(const cv::Mat &image, cv::Mat &integral_image, cv::Mat &integral_sq)
-{
-	if (image.empty())
-	{
-		MYCV_ERROR(kImageEmpty, "image empty");
-		return kImageEmpty;
-	}
-
-	int h = image.rows;
-	int w = image.cols;
-	integral_image = cv::Mat::zeros(cv::Size(w + 1, h + 1), CV_32FC1);
-	integral_sq = cv::Mat::zeros(cv::Size(w + 1, h + 1), CV_64FC1);
-
-	
-
-	return kSuccess;
-
-}
 
 /**
  * @brief Get the Region sum From Integral Image or sq integral image
@@ -163,7 +143,7 @@ int getRegionSumFromIntegralImage(const cv::Mat & integral,int tpx,int tpy,int b
 {
     if(integral.empty())
     {
-        MYCV_ERROR(mycv::kImageEmpty,"Input image is empty!");
+        MYCV_ERROR2(mycv::kImageEmpty,"Input image is empty!");
         return mycv::kImageEmpty;
     }
     if(tpx > btx 
@@ -173,7 +153,7 @@ int getRegionSumFromIntegralImage(const cv::Mat & integral,int tpx,int tpy,int b
     || btx > integral.cols - 1
     || bty > integral.rows - 1)
     {
-        MYCV_ERROR(mycv::kBadSize,"0 <= tpx <= btx <= w, && 0<= tpy <= bty <= h");
+        MYCV_ERROR2(mycv::kBadSize,"0 <= tpx <= btx <= w, && 0<= tpy <= bty <= h");
         return mycv::kBadSize;
     }
     const double *ptp = integral.ptr<double>(tpy);

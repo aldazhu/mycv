@@ -46,7 +46,7 @@ int NormalizedCrossCorrelation(
     {
         if(source.empty() || target.empty())
         {
-            MYCV_ERROR(kImageEmpty,"NCC empty input image");
+            MYCV_ERROR2(kImageEmpty,"NCC empty input image");
             return kImageEmpty;
         }
         int H = source.rows;
@@ -55,7 +55,7 @@ int NormalizedCrossCorrelation(
         int t_w = target.cols;
         if(t_h > H || t_w > W)
         {
-            MYCV_ERROR(kBadSize,"NCC source image size should larger than targe image");
+            MYCV_ERROR2(kBadSize,"NCC source image size should larger than targe image");
             return kBadSize;
         }
 
@@ -125,7 +125,7 @@ int NormalizedCrossCorrelationFFT(
 {
 	if (source.empty() || target.empty())
 	{
-		MYCV_ERROR(kImageEmpty, "NCC empty input image");
+		MYCV_ERROR2(kImageEmpty, "NCC empty input image");
 		return kImageEmpty;
 	}
 	int H = source.rows;
@@ -134,7 +134,7 @@ int NormalizedCrossCorrelationFFT(
 	int t_w = target.cols;
 	if (t_h > H || t_w > W)
 	{
-		MYCV_ERROR(kBadSize, "NCC source image size should larger than targe image");
+		MYCV_ERROR2(kBadSize, "NCC source image size should larger than targe image");
 		return kBadSize;
 	}
 
@@ -202,12 +202,12 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean)
 {
     if(input.empty())
     {
-        MYCV_ERROR(kImageEmpty,"input empty");
+        MYCV_ERROR2(kImageEmpty,"input empty");
         return kImageEmpty;
     }
     if(1 != input.channels())
     {
-        MYCV_ERROR(kBadDepth,"Now only sopurt for one channel image");
+        MYCV_ERROR2(kBadDepth,"Now only sopurt for one channel image");
         return kBadDepth;
     }
     int h = input.rows;
@@ -216,7 +216,7 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean)
     if((ROI.x+ROI.width > w ) || (ROI.y+ROI.height > h)
     || ROI.width <= 0 || ROI.height <= 0 )
     {
-        MYCV_ERROR(kBadSize,"ROI is too big");
+        MYCV_ERROR2(kBadSize,"ROI is too big");
         return kBadSize;
     }
     int tpx = ROI.x;
@@ -253,12 +253,12 @@ double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a,doub
 {
     if(A.empty() || B.empty())
     {
-        MYCV_ERROR(kImageEmpty,"input image is empty");
+        MYCV_ERROR2(kImageEmpty,"input image is empty");
         return kImageEmpty;
     }
     if (A.cols != B.cols || A.rows != B.rows)
     {
-        MYCV_ERROR(kBadSize,"mat A B should be in same size");
+        MYCV_ERROR2(kBadSize,"mat A B should be in same size");
         return kBadSize;
     }
     
@@ -303,7 +303,7 @@ double calculateVariance(const cv::Mat &image,double mean)
 {
     if (image.empty())  
     {
-        MYCV_ERROR(kImageEmpty,"empty image");
+        MYCV_ERROR2(kImageEmpty,"empty image");
         return -1;//正常的方差不会小于0
     }
     if (-1 == mean)
@@ -339,7 +339,7 @@ double calculateMean(const cv::Mat &image)
 {
      if (image.empty())  
     {
-        MYCV_ERROR(kImageEmpty,"empty image");
+        MYCV_ERROR2(kImageEmpty,"empty image");
         return -1;
     }
 
@@ -374,7 +374,7 @@ int convFFT(const cv::Mat &src, const cv::Mat &kernel, cv::Mat& output)
 {
 	if (src.empty() || kernel.empty())
 	{
-        MYCV_ERROR(kImageEmpty,"input is empty");
+        MYCV_ERROR2(kImageEmpty,"input is empty");
 		return kImageEmpty;
 	}
 	int dft_h = cv::getOptimalDFTSize(src.rows + kernel.rows - 1);

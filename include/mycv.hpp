@@ -18,6 +18,7 @@
 #include "mycv_def.h"
 #include "NCC.h"
 #include "integral_image.h"
+#include "threshold.h"
 
 
 #endif //!MYCV_MYCV_HPP_
