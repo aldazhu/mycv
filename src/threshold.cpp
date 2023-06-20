@@ -84,36 +84,42 @@ int GetOtsuThresh(const cv::Mat& src)
 	}
 	
 	// 
+	float ep = 0.0000000001f; // use to avoid devide by zero.
 	int hist[256] = { 0 };
 	if (error_code::kSuccess != GetHist(src, hist))
 	{
 		return -1;
 	}
+	
+	int sum = 0;// sum(i * hist[i])
+	int num = 0;// the number of pixels
+	for (int i = 0; i < 256; ++i)
+	{
+		sum += i * hist[i];
+		num += hist[i];
+	}
 
-	float ep = FLT_MIN; // use to avoid devide by zero.
-	float max_var = 0;
+	//float mean_all = sum / (num + ep);;	
+	float max_var = -1.0;
 	int max_var_index = 0;
-	for (int th = 1; th < 255; ++th)
+	for (int th = 1; th < 255; ++th) // th in [1,254]
 	{
 		// Calculate the mean value
-		int sum1 = 0, sum2 = 0;
-		int num1 = 0, num2 = 0;
-		for (int i = 1; i <= th; ++i)
+		int sum1 = 0;
+		int num1 = 0;
+		for (int i = 0; i <= th; ++i) // i <= th , class 1
 		{
 			sum1 += hist[i] * i;
 			num1 += hist[i];
 		}
-		float mean1 = sum1 / ((float)num1 + ep);;
-
-		for (int i = th + 1; i < 255; ++i) //
-		{
-			sum2 += hist[i] * i;
-			num2 += hist[i];
-		}
-		float mean2 = sum2 / ((float)num2 + ep);
+		float mean1 = sum1 / (num1 + ep);
+		int num2 = num - num1;
+		float mean2 = (sum - sum1) / (num - num1 + ep);
 		
 		// the between-class variance
-		float var = num1 * num2 * (mean1 - mean2) * (mean1 - mean2);
+		// 在这里如果不除以num会导致精度损失，前面的num1*num2很大，后面的需要保存很多位小数，在相乘的时候小数被掩盖了。
+		// ERROR!: float var = num1 * num2  * (mean1 - mean2) * (mean1 - mean2);// 本来这里除以num是多余的，因为只要var最大就可以了，但是不除会损失精度
+		float var = (num1 / num) * (num2 / num) * (mean1 - mean2) * (mean1 - mean2);
 		if (var > max_var)
 		{
 			max_var = var;

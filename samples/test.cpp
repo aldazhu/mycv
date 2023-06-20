@@ -223,7 +223,7 @@ void test_NCC()
 
 void test_OTSU()
 {
-    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
    
     cv::Mat source, result,opencv_result;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
@@ -343,6 +343,6 @@ int main()
     //test_NCC_speed();
     //cmp_speed();
     //del();
-    system("pause");
+    //system("pause");
     return 0;
 }
