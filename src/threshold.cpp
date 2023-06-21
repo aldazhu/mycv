@@ -84,7 +84,7 @@ int GetOtsuThresh(const cv::Mat& src)
 	}
 	
 	// 
-	float ep = 0.0000000001f; // use to avoid devide by zero.
+	float ep = 0.0000000001f; //  avoid devide by zero.
 	int hist[256] = { 0 };
 	if (error_code::kSuccess != GetHist(src, hist))
 	{
@@ -99,7 +99,6 @@ int GetOtsuThresh(const cv::Mat& src)
 		num += hist[i];
 	}
 
-	//float mean_all = sum / (num + ep);;	
 	float max_var = -1.0;
 	int max_var_index = 0;
 	int sum1 = 0; // 原本应该是 0*hist[0],值为0
