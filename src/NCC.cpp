@@ -87,14 +87,14 @@ int NormalizedCrossCorrelation(
                 double temp_mean = region_sum / target_size;
                 
                 //计算两个图的协方差
-                //double cov = calculateCovariance(temp,target,temp_mean,target_mean);
+                double cov = calculateCovariance(temp,target,temp_mean,target_mean);
                 
                 //计算source中对应子块的方差
                 getRegionSumFromIntegralImage(sq_integral,col,row,col+t_w-1,row+t_h-1,region_sq_sum);
 
                 double temp_var = (region_sq_sum - temp_mean*region_sum)/target_size;
                 double temp_std_var = std::sqrt(temp_var);
-                //p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+                p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
             }
         }
 

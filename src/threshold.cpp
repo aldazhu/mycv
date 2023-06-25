@@ -107,7 +107,7 @@ int GetOtsuThresh(const cv::Mat& src)
 	{
 		// Calculate the mean value
 		
-		sum1 +=  th * hist[th]; // 累计的一个变量，不用每次从头开始求和
+		sum1 +=  th * hist[th]; // 累计的一个变量，不用每次从头开始求和, (换成float会增加很多时间)
 		num1 += hist[th];
 		float mean1 = sum1 / (num1 + ep);
 		int num2 = num - num1;
