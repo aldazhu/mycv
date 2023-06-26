@@ -36,6 +36,12 @@ int NormalizedCrossCorrelation(
     cv::Mat &result
     );
 
+int FastNormalizedCrossCorrelation(
+    const cv::Mat& source,
+    const cv::Mat& target,
+    cv::Mat& result
+);
+
 /**
  * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时
  * 用(Pearson)相关系数来度量。
@@ -98,6 +104,15 @@ double calculateVariance(const cv::Mat &image,double mean=-1);
  * @return double ： 输入图像的灰度均值
  */
 double calculateMean(const cv::Mat &image);
+
+
+/**
+ * @brief 计算输入图的灰度平方均值，E(X^2)
+ *
+ * @param image  : 输入图CV_8UC1
+ * @return double ： 输入图像的灰度平方均值，
+ */
+double calculateSquareMean(const cv::Mat& image);
 
 
 /**

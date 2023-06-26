@@ -75,6 +75,7 @@ int NormalizedCrossCorrelation(
 
         double region_sum = 0;
         double region_sq_sum = 0;
+
         for(int row = 0; row < r_h ; row++)
         {
             float * p = result.ptr<float>(row);
@@ -87,20 +88,149 @@ int NormalizedCrossCorrelation(
                 double temp_mean = region_sum / target_size;
                 
                 //计算两个图的协方差
-                double cov = calculateCovariance(temp,target,temp_mean,target_mean);
-                
+                double cov = calculateCovariance(temp, target, temp_mean, target_mean);
+
                 //计算source中对应子块的方差
                 getRegionSumFromIntegralImage(sq_integral,col,row,col+t_w-1,row+t_h-1,region_sq_sum);
 
                 double temp_var = (region_sq_sum - temp_mean*region_sum)/target_size;
-                double temp_std_var = std::sqrt(temp_var);
-                p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+                double temp_std_var = std::sqrt(temp_var);                                   
+                p[col] = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));               
             }
         }
 
-
         return kSuccess;
     }
+
+
+int FastNormalizedCrossCorrelation(
+    const cv::Mat& source,
+    const cv::Mat& target,
+    cv::Mat& result
+)
+{
+    if (source.empty() || target.empty())
+    {
+        MYCV_ERROR2(kImageEmpty, "NCC empty input image");
+        return kImageEmpty;
+    }
+    int H = source.rows;
+    int W = source.cols;
+    int t_h = target.rows;
+    int t_w = target.cols;
+    if (t_h > H || t_w > W)
+    {
+        MYCV_ERROR2(kBadSize, "NCC source image size should larger than targe image");
+        return kBadSize;
+    }
+
+    //r = cov(X,Y)/(sigma(X) * sigma(Y))
+    //sigma(X) = sqrt(var(X))
+    int r_h = H - t_h + 1; //结果图的高度
+    int r_w = W - t_w + 1;
+    cv::Mat integral_image;//source的积分图
+    cv::Mat sq_integral;//source 的像素平方的积分图
+    integral(source, integral_image, sq_integral);
+
+    const double target_size = (double)t_h * t_w;
+    double target_mean = calculateMean(target);
+    double target_var = calculateVariance(target, target_mean);
+    double target_std_var = std::sqrt(target_var);
+
+    // 计算sum(target[i][j]^2)的查找表
+    std::vector<int64> target_integral_table(t_h*t_w,0);
+    for (int i = 0; i < target.rows; ++i)
+    {
+        const uchar* tp = target.ptr<uchar>(i);
+        for (int j = 0; j < target.cols; ++j)
+        {
+            int64 sq = (*(tp + j)) * (*(tp + j));
+            if (0 == i && 0 == j)
+            {
+                target_integral_table[0] = sq;
+            }
+            else
+            {
+                target_integral_table[i * t_w + j] = target_integral_table[i * t_w + j - 1] + sq;
+            }
+        }
+    }
+    std::vector<double> target_integral_mul(t_h * t_w, 0);//target_integral_mul[k] =  sqrt(target_integral[-1] - target_integral[k] );
+    int last_index = t_h * t_w - 1;
+    for (int i = 0; i < target_integral_table.size(); ++i)
+    {
+        target_integral_mul[i] = std::sqrt(target_integral_table[last_index] - target_integral_table[i]);
+    }
+
+    result = cv::Mat::zeros(cv::Size(r_w, r_h), CV_32FC1);
+
+    double region_sum = 0;
+    double region_sq_sum = 0;
+
+    float max_score = -9999.9f;
+
+    int64 save_step = 0, add_step = 0;
+    for (int row = 0; row < r_h; row++)
+    {
+        float* p = result.ptr<float>(row);
+        for (int col = 0; col < r_w; col++)
+        {
+            cv::Rect ROI(col, row, t_w, t_h);//source上和目标图匹配的子图
+            cv::Mat temp = source(ROI);
+            //计算source中对应子块的均值
+            getRegionSumFromIntegralImage(integral_image, col, row, col + t_w - 1, row + t_h - 1, region_sum);
+            double temp_mean = region_sum / target_size;
+
+            //计算source中对应子块的方差
+            getRegionSumFromIntegralImage(sq_integral, col, row, col + t_w - 1, row + t_h - 1, region_sq_sum);
+            double temp_var = (region_sq_sum - temp_mean * region_sum) / target_size;
+            double temp_std_var = std::sqrt(temp_var);
+            
+            int64 mul_sum = 0, s_sq_sum = 0;
+            double up_temp_sum = 0;;
+            bool continue_run = true;
+            int level = 0;
+           
+            for (int i = 0; i < t_h ; ++i)
+            {
+                const uchar* sp = temp.ptr<uchar>(i);// source中的子块
+                const uchar* tp = target.ptr<uchar>(i);
+                for (int j = 0; j < t_w; ++j)
+                {
+                    mul_sum += (*(sp + j)) * (*(tp + j));// sum(temp[i][j]*target[i][j])
+                    s_sq_sum += (*(sp + j)) * (*(sp + j));// sum(temp[i][j]^2)
+                    up_temp_sum = mul_sum + std::sqrt(region_sq_sum - s_sq_sum) * target_integral_mul[i * t_w + j]; // sum(temp[i][j]*target[i][j])的上边界
+                    double up_covariance = up_temp_sum / target_size - temp_mean * target_mean;
+                    double up_p = up_covariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+                    if (up_p < max_score) // 如果上边界的值比当前最好的结果还小的话直接退出，选择下一个候选点
+                    {
+                        /*printf("row: %d,col:%d, up_p: %f, max_score:%f\n", row, col, up_p, max_score);
+                        int save = t_h * t_w - i * j;
+                        printf("save %d calculate, i:%d, j:%d, all i:%d, all j:%d\n",save, i,j,t_h,t_w );
+                        save_step += save;
+                        add_step += 5 * i * j;*/
+                        goto next_candidate;
+                    }
+                }
+                
+            }
+            // 到这里完成了一次子图和模板图的相关性计算
+            double convariance = (double)mul_sum / target_size - temp_mean * target_mean;
+            float score = convariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+            if (score > max_score)
+            {
+                max_score = score;
+            }
+            p[col] = score;
+            
+        next_candidate:
+            continue;
+        }
+    }
+    //printf("save_step:%lld ,add_step:%lld\n", save_step, add_step);
+
+    return kSuccess;
+}
 
 
 /**
@@ -352,6 +482,29 @@ double calculateMean(const cv::Mat &image)
             sum += p[col];
         }
         
+    }
+
+    double mean = sum / ((double)image.cols * (double)image.rows);
+    return mean;
+}
+
+double calculateSquareMean(const cv::Mat& image)
+{
+    if (image.empty())
+    {
+        MYCV_ERROR2(kImageEmpty, "empty image");
+        return -1;
+    }
+
+    double sum = 0;
+    for (int row = 0; row < image.rows; row++)
+    {
+        const uchar* p = image.ptr<uchar>(row);
+        for (int col = 0; col < image.cols; col++)
+        {
+            sum += (float)p[col] * p[col];
+        }
+
     }
 
     double mean = sum / ((double)image.cols * (double)image.rows);

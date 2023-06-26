@@ -127,7 +127,7 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 10;
+    const int TIMES = 2;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
     std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
     std::string log_path = "ncc_speed.txt";
@@ -155,14 +155,14 @@ void test_NCC_speed()
         printf("target image size w,h = (%d,%d) \n", target.cols, target.rows);
 
         //warm up
-        //mycv::NormalizedCrossCorrelation(source, target, result);
-        mycv::NormalizedCrossCorrelationFFT(source, target, result);
+        mycv::NormalizedCrossCorrelation(source, target, result);
+        //mycv::NormalizedCrossCorrelationFFT(source, target, result);
 
         start_time = std::chrono::steady_clock::now();;
         for (int n = 0; n < TIMES; n++)
         {
-            //mycv::NormalizedCrossCorrelation(source, target, result);
-            mycv::NormalizedCrossCorrelationFFT(source, target, result);
+            mycv::FastNormalizedCrossCorrelation(source, target, result);
+            //mycv::NormalizedCrossCorrelationFFT(source, target, result);
         }
         end_time = std::chrono::steady_clock::now();;
         myncc_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
@@ -210,7 +210,7 @@ void test_NCC()
     source = cv::imread(src_path,cv::IMREAD_GRAYSCALE);
     target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
 
-    mycv::NormalizedCrossCorrelationFFT(source, target, result);
+    mycv::FastNormalizedCrossCorrelation(source, target, result);
     mycv::showImage(target, "target");
     mycv::showImage(source, "source");
     mycv::showImage(result, "result", 0);
@@ -333,14 +333,14 @@ using namespace cv;
 int main()
 {
     //test_OTSU();
-    test_OTSU_speed();
+    //test_OTSU_speed();
     //test_hist();
 
 	//test_IntegralAVX();
     //test_NCC();
     //test_integralImage();
 	//test_IntegralSpeed();
-    //test_NCC_speed();
+    test_NCC_speed();
     //cmp_speed();
     //del();
     //system("pause");
