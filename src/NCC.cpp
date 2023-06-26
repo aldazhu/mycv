@@ -138,7 +138,8 @@ int FastNormalizedCrossCorrelation(
     double target_std_var = std::sqrt(target_var);
 
     // 计算sum(target[i][j]^2)的查找表
-    std::vector<int64> target_integral_table(t_h*t_w,0);
+    //std::vector<int64> target_integral_table(t_h*t_w,0);
+    std::unique_ptr<int64[]>target_integral_table = std::make_unique<int64[]>(t_h * t_w);
     for (int i = 0; i < target.rows; ++i)
     {
         const uchar* tp = target.ptr<uchar>(i);
@@ -155,9 +156,11 @@ int FastNormalizedCrossCorrelation(
             }
         }
     }
-    std::vector<double> target_integral_mul(t_h * t_w, 0);//target_integral_mul[k] =  sqrt(target_integral[-1] - target_integral[k] );
+    //std::vector<double> target_integral_mul(t_h * t_w, 0);//target_integral_mul[k] =  sqrt(target_integral[-1] - target_integral[k] );
+    int target_size_ = t_h * t_w;
+    std::unique_ptr<double[]>target_integral_mul = std::make_unique<double[]>(t_h * t_w);
     int last_index = t_h * t_w - 1;
-    for (int i = 0; i < target_integral_table.size(); ++i)
+    for (int i = 0; i < target_size_; ++i)
     {
         target_integral_mul[i] = std::sqrt(target_integral_table[last_index] - target_integral_table[i]);
     }
@@ -167,7 +170,7 @@ int FastNormalizedCrossCorrelation(
     double region_sum = 0;
     double region_sq_sum = 0;
 
-    float max_score = -9999.9f;
+    double max_score = -9999.9f;
 
     int64 save_step = 0, add_step = 0;
     for (int row = 0; row < r_h; row++)
@@ -199,18 +202,22 @@ int FastNormalizedCrossCorrelation(
                 {
                     mul_sum += (*(sp + j)) * (*(tp + j));// sum(temp[i][j]*target[i][j])
                     s_sq_sum += (*(sp + j)) * (*(sp + j));// sum(temp[i][j]^2)
-                    up_temp_sum = mul_sum + std::sqrt(region_sq_sum - s_sq_sum) * target_integral_mul[i * t_w + j]; // sum(temp[i][j]*target[i][j])的上边界
-                    double up_covariance = up_temp_sum / target_size - temp_mean * target_mean;
-                    double up_p = up_covariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
-                    if (up_p < max_score) // 如果上边界的值比当前最好的结果还小的话直接退出，选择下一个候选点
+                    if (i > t_h / 2 && j > t_w / 2)
                     {
-                        /*printf("row: %d,col:%d, up_p: %f, max_score:%f\n", row, col, up_p, max_score);
-                        int save = t_h * t_w - i * j;
-                        printf("save %d calculate, i:%d, j:%d, all i:%d, all j:%d\n",save, i,j,t_h,t_w );
-                        save_step += save;
-                        add_step += 5 * i * j;*/
-                        goto next_candidate;
+                        up_temp_sum = mul_sum + std::sqrt(region_sq_sum - s_sq_sum) * target_integral_mul[i * t_w + j]; // sum(temp[i][j]*target[i][j])的上边界
+                        double up_covariance = up_temp_sum / target_size - temp_mean * target_mean;
+                        double up_p = up_covariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+                        if (up_p < max_score) // 如果上边界的值比当前最好的结果还小的话直接退出，选择下一个候选点
+                        {
+                            /*printf("row: %d,col:%d, up_p: %f, max_score:%f\n", row, col, up_p, max_score);
+                            int save = t_h * t_w - i * j;
+                            printf("save %d calculate, i:%d, j:%d, all i:%d, all j:%d\n",save, i,j,t_h,t_w );
+                            save_step += save;
+                            add_step += 5 * i * j;*/
+                            goto next_candidate;
+                        }
                     }
+                    
                 }
                 
             }

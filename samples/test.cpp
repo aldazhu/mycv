@@ -127,7 +127,7 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 2;
+    const int TIMES = 1;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
     std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
     std::string log_path = "ncc_speed.txt";
@@ -138,16 +138,16 @@ void test_NCC_speed()
     double myncc_runtime = 0, opencv_runtime = 0;
 
     auto logger = spdlog::basic_logger_mt("NCC", log_path);
-    logger->set_level(spdlog::level::critical);
+    logger->set_level(spdlog::level::err);
     // location
     double min_value, max_value;
     cv::Point min_loc, max_loc;
     for (int src_size = 500; src_size <= 1200; src_size += 100)
     {
-        source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
+        /*source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
         target = cv::Mat(cv::Size(100, 100), CV_8UC1);
         cv::randu(source,cv::Scalar(0),cv::Scalar(255));
-        cv::randu(target,cv::Scalar(0),cv::Scalar(255));
+        cv::randu(target,cv::Scalar(0),cv::Scalar(255));*/
         logger->info("src_size:(h,w)=({0},{1}), target_size:(h,w)=({2},{3})",
             source.rows,source.cols,target.rows,target.cols);
         // my NCC test
@@ -155,12 +155,13 @@ void test_NCC_speed()
         printf("target image size w,h = (%d,%d) \n", target.cols, target.rows);
 
         //warm up
-        mycv::NormalizedCrossCorrelation(source, target, result);
+        //mycv::NormalizedCrossCorrelation(source, target, result);
         //mycv::NormalizedCrossCorrelationFFT(source, target, result);
 
         start_time = std::chrono::steady_clock::now();;
         for (int n = 0; n < TIMES; n++)
         {
+            //mycv::NormalizedCrossCorrelation(source, target, result);
             mycv::FastNormalizedCrossCorrelation(source, target, result);
             //mycv::NormalizedCrossCorrelationFFT(source, target, result);
         }
@@ -197,6 +198,8 @@ void test_NCC_speed()
         logger->info("opencv NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
             min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
         logger->info("speed : myncc_runtime / opencv_runtime = {}", (int)(myncc_runtime / opencv_runtime));
+
+        printf("opencv run faster %f times\n", myncc_runtime / opencv_runtime);
     }
   
 
