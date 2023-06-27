@@ -23,6 +23,162 @@
 namespace mycv
 {
 
+int NCCPyramid(const cv::Mat& source, const cv::Mat& target, const int level, float& x, float& y, float& score)
+{
+    // 0 0 0
+    // 0 * 0
+    // 0 0 0
+    constexpr int extd = 1; // 在最优点周围扩展的搜索区域半径
+    if (level <= 0 || level > 20)
+    {
+        MYCV_ERROR1(error_code::kBadInput);
+        return error_code::kBadInput;
+    }
+
+    if (source.empty() || target.empty())
+    {
+        MYCV_ERROR1(error_code::kImageEmpty);
+        return error_code::kImageEmpty;
+    }
+    std::vector<cv::Mat> src_py, tar_py;
+    CHECK_RET(BuildPyramidImages(source, src_py, level));
+    CHECK_RET(BuildPyramidImages(target, tar_py, level));
+
+    x = 0, y = 0, score = 0;
+    // 计算顶层的位置
+    auto &src = src_py[level - 1];
+    auto &tar = tar_py[level - 1];
+    NCC(src, tar, x, y, score);
+    
+    for (int i = level - 2; i >= 0; --i)
+    {
+        auto &src = src_py[i];
+        auto &tar = tar_py[i];
+
+        // 把上层金字塔中的位置向下回溯
+        int upx = static_cast<int>(x * 2);
+        int upy = static_cast<int>(y * 2);
+
+        // 获取当前层级上的搜索区域
+        int tpx = upx - extd;
+        int tpy = upy - extd;
+        int btx = upx + tar.cols + extd;
+        int bty = upy + tar.rows + extd;
+        tpx = tpx >= 0 ? tpx : 0;
+        tpy = tpy >= 0 ? tpy : 0;
+        btx = btx < src.cols ? btx : src.cols;
+        bty = bty < src.rows ? bty : src.rows;
+        cv::Mat src_roi = src(cv::Rect(cv::Point(tpx, tpy), cv::Point(btx, bty)));
+
+        // 计算NCC
+        NCC(src_roi, tar_py[i], x, y, score);
+
+        // 把x,y的位置从src_roi映射回src
+        x += tpx;
+        y += tpy;
+    }
+
+}
+
+int BuildPyramidImages(const cv::Mat& src, std::vector<cv::Mat>& py_images, const int level)
+{
+    if (src.empty()) return error_code::kImageEmpty;
+    if (src.type() != CV_8UC1)
+    {
+        MYCV_ERROR1(error_code::kDoseNotSupportImageType);
+        return error_code::kDoseNotSupportImageType;
+    }
+    if (src.rows < (1 << level) || src.cols < (1 << level))
+    {
+        std::string stream = "level is too large, src.rows=" + std::to_string(src.rows)
+            + ",src.cols=" + std::to_string(src.cols) + ",level=" + std::to_string(level) 
+            + ",2^level=" + std::to_string(1 << level);
+        MYCV_ERROR2(error_code::kBadInput, stream);
+        return error_code::kBadInput;
+    }
+    
+    if (py_images.size() > 0) py_images.clear();
+
+    py_images.emplace_back(src.clone());
+    for (int i = 1; i < level; ++i)
+    {
+        cv::Mat dst;
+        cv::GaussianBlur(py_images[i - 1], dst, cv::Size(3, 3), 1, 1);
+        cv::resize(dst, dst, cv::Size(), 0.5, 0.5);
+        py_images.emplace_back(dst);
+    }
+
+    return error_code::kSuccess;
+}
+
+int NCC(const cv::Mat& source, const cv::Mat& target, float& x, float& y, float& score)
+{
+    if (source.empty() || target.empty())
+    {
+        MYCV_ERROR2(kImageEmpty, "NCC empty input image");
+        return kImageEmpty;
+    }
+    int H = source.rows;
+    int W = source.cols;
+    int t_h = target.rows;
+    int t_w = target.cols;
+    if (t_h > H || t_w > W)
+    {
+        MYCV_ERROR2(kBadSize, "NCC source image size should larger than targe image");
+        return kBadSize;
+    }
+
+    x = 0;
+    y = 0;
+    score = 0;
+
+    //r = cov(X,Y)/(sigma(X) * sigma(Y))
+    //sigma(X) = sqrt(var(X))
+    int r_h = H - t_h + 1; //结果图的高度
+    int r_w = W - t_w + 1;
+    cv::Mat integral_image;//source的积分图
+    cv::Mat sq_integral;//source 的像素平方的积分图
+    integral(source, integral_image, sq_integral);
+
+    const double target_size = (double)t_h * t_w;
+    double target_mean = calculateMean(target);
+    double target_var = calculateVariance(target, target_mean);
+    double target_std_var = std::sqrt(target_var);
+   
+    double region_sum = 0;
+    double region_sq_sum = 0;
+
+    for (int row = 0; row < r_h; row++)
+    {
+       
+        for (int col = 0; col < r_w; col++)
+        {
+            cv::Rect ROI(col, row, t_w, t_h);//source上和目标图匹配的子图
+            cv::Mat temp = source(ROI);
+            //计算source中对应子块的均值
+            getRegionSumFromIntegralImage(integral_image, col, row, col + t_w - 1, row + t_h - 1, region_sum);
+            double temp_mean = region_sum / target_size;
+
+            //计算两个图的协方差
+            double cov = calculateCovariance(temp, target, temp_mean, target_mean);
+
+            //计算source中对应子块的方差
+            getRegionSumFromIntegralImage(sq_integral, col, row, col + t_w - 1, row + t_h - 1, region_sq_sum);
+
+            double temp_var = (region_sq_sum - temp_mean * region_sum) / target_size;
+            double temp_std_var = std::sqrt(temp_var);
+            double curr_score = cov / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+            if (curr_score > score)
+            {
+                score = curr_score;
+                x = col;
+                y = row;
+            }
+        }
+    }
+
+    return kSuccess;
+}
 
 /**
  * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时

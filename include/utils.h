@@ -33,6 +33,7 @@ enum error_code{
     kBadDepth,
     kBadInput,
 	kNotImplement,
+	kDoseNotSupportImageType,
 };
 
 /**

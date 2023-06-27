@@ -1,4 +1,4 @@
-#include "utils.h"
+﻿#include "utils.h"
 
 #include "stdio.h"
 #include "opencv.hpp"
@@ -26,6 +26,7 @@ const char* error_code_string(int error_code)
         case kBadDepth:     return "Bad depth!";
         case kBadInput:     return "Bad input";
         case kNotImplement: return "Not implentment";
+        case kDoseNotSupportImageType:  return "dose not supported image data type";
     }
 
     return "Unknown error";

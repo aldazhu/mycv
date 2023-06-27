@@ -17,6 +17,33 @@
 namespace mycv{
 
 /**
+ * @brief 构建图像金字塔.
+ * 
+ * @param [in] src : 输入的原图CV_8UC1
+ * @param [out] py_images : 输出的金子塔图像,0:source, 1:source/2, 2:source/4
+ * @param [in] level : 金字塔的级数
+ * @return  :
+ */
+int BuildPyramidImages(const cv::Mat& src, std::vector<cv::Mat>& py_images, const int level);
+
+/**
+ * @brief 带金字塔的NCC.
+ * 
+ * @param [in] source : 搜索图CV_8UC1格式
+ * @param [in] target : 模板图CV_8UC1格式
+ * @param [in] level : 金字塔层数
+ * @param [out] x : 
+ * @param [out] y : 
+ * @param [out] score : 
+ * @return  :
+ */
+int NCCPyramid(const cv::Mat& source, const cv::Mat& target, const int level, float& x, float& y, float& score);
+
+int NCC(const cv::Mat& source, const cv::Mat& target, float& x, float& y, float& score);
+
+
+
+/**
  * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时
  * 用(Pearson)相关系数来度量。
  * r=cov(X,Y)/(sigma(X) * sigma(Y))

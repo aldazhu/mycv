@@ -127,7 +127,8 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 2;
+    const int TIMES = 10;
+    constexpr int pyramid_level = 4;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
     std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
     std::string log_path = "ncc_speed.txt";
@@ -136,6 +137,8 @@ void test_NCC_speed()
     target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
     std::chrono::steady_clock::time_point start_time,end_time;
     double myncc_runtime = 0, opencv_runtime = 0;
+
+    float x, y, score;
 
     auto logger = spdlog::basic_logger_mt("NCC", log_path);
     logger->set_level(spdlog::level::err);
@@ -161,17 +164,20 @@ void test_NCC_speed()
         start_time = std::chrono::steady_clock::now();;
         for (int n = 0; n < TIMES; n++)
         {
+            mycv::NCCPyramid(source, target, pyramid_level, x, y, score);
             //mycv::NormalizedCrossCorrelation(source, target, result);
-            mycv::FastNormalizedCrossCorrelation(source, target, result);
+            //mycv::FastNormalizedCrossCorrelation(source, target, result);
             //mycv::NormalizedCrossCorrelationFFT(source, target, result);
         }
-        end_time = std::chrono::steady_clock::now();;
+        end_time = std::chrono::steady_clock::now();
         myncc_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
         printf("my NCC run %d times,average use %f ms \n", TIMES, myncc_runtime);
 
-        cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        //cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        //printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+        //    min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
         printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
-            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+            0.0, 0, 0, score, (int)x, (int)y);
 
         logger->info("my NCC run {0} times,average use {1} ms \n", TIMES, myncc_runtime);
         logger->info("my NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
@@ -277,7 +283,7 @@ void test_hist()
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
 
     cv::Mat source, result, opencv_result;
-    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    source = cv::imread(src_path);
 
     int hist[256] = { 0 };
     int hist_avx[256] = { 0 };
@@ -326,15 +332,28 @@ void test_IntegralSpeed()
 	}
 }
 	
+void test_Pyramid()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+   
+    cv::Mat source = cv::imread(src_path);
 
-#include <opencv2/opencv.hpp>
-#include <immintrin.h> // °üº¬AVXÖ¸Áî¼¯
+    std::vector<cv::Mat> py_images;
+    int level = 3;
+    mycv::BuildPyramidImages(source, py_images, level);
+    for (int i=0; i<py_images.size();++i)
+    {
+        auto image = py_images[i];
+        mycv::showImage(image, std::to_string(i), 1, 1);
+    }
+    cv::waitKey(0);
 
-using namespace cv;
+}
 
 
 int main()
 {
+
     //test_OTSU();
     //test_OTSU_speed();
     //test_hist();
@@ -346,6 +365,9 @@ int main()
     test_NCC_speed();
     //cmp_speed();
     //del();
+    
+    //test_Pyramid();
+   
     //system("pause");
     return 0;
 }

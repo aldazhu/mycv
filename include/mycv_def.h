@@ -12,6 +12,7 @@
 #ifndef MYCV_MYCV_DEF_H_
 #define MYCV_MYCV_DEF_H_
 
+#include "utils.h"
 
 //copy from opencv
 #ifdef mycv_func
@@ -34,11 +35,18 @@
 #define mycv_func "<unknown>"
 #endif
 
-#define SHOW_ERROR_CODE(code) (code)
 
 #define MYCV_ERROR2(code,msg) mycv::error(code,msg,mycv_func,__FILE__,__LINE__)
 
 #define MYCV_ERROR1(code) mycv::error(code,"",mycv_func,__FILE__,__LINE__)
+
+#define CHECK_RET(code)		\
+{							\
+	if(code != mycv::error_code::kSuccess){		\
+		MYCV_ERROR1(code);						\
+		return code;							\
+	}											\
+}
 
 
 
