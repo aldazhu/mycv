@@ -127,9 +127,9 @@ void test_integralImage()
 
 void test_NCC_speed()
 {
-    const int TIMES = 1;
+    const int TIMES = 2;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
-    std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+    std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
     std::string log_path = "ncc_speed.txt";
     cv::Mat source, target, result;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
@@ -208,7 +208,7 @@ void test_NCC_speed()
 void test_NCC()
 {
 	std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
-	std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+	std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
     cv::Mat source, target,result;
     source = cv::imread(src_path,cv::IMREAD_GRAYSCALE);
     target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);

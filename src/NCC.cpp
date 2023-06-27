@@ -170,8 +170,10 @@ int FastNormalizedCrossCorrelation(
     double region_sum = 0;
     double region_sq_sum = 0;
 
+    int half_th = t_h / 2;
+    int half_tw = t_w / 2;
     double max_score = -9999.9f;
-
+    double max_up_sum = -9999.9f;
     int64 save_step = 0, add_step = 0;
     for (int row = 0; row < r_h; row++)
     {
@@ -202,18 +204,20 @@ int FastNormalizedCrossCorrelation(
                 {
                     mul_sum += (*(sp + j)) * (*(tp + j));// sum(temp[i][j]*target[i][j])
                     s_sq_sum += (*(sp + j)) * (*(sp + j));// sum(temp[i][j]^2)
-                    if (i > t_h / 2 && j > t_w / 2)
+                    if (i > half_th && j > half_tw)
                     {
                         up_temp_sum = mul_sum + std::sqrt(region_sq_sum - s_sq_sum) * target_integral_mul[i * t_w + j]; // sum(temp[i][j]*target[i][j])的上边界
-                        double up_covariance = up_temp_sum / target_size - temp_mean * target_mean;
-                        double up_p = up_covariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
-                        if (up_p < max_score) // 如果上边界的值比当前最好的结果还小的话直接退出，选择下一个候选点
+                        double up_cov_result = (up_temp_sum - region_sum * target_mean) / (temp_std_var + 0.0000001);
+                       
+                        if (up_cov_result < max_up_sum) // 如果上边界的值比当前最好的结果还小的话直接退出，选择下一个候选点
                         {
-                            /*printf("row: %d,col:%d, up_p: %f, max_score:%f\n", row, col, up_p, max_score);
+                            /*printf("row: %d,col:%d, up_p: %f, max_score:%f\n", row, col, up_temp_sum, max_score);
                             int save = t_h * t_w - i * j;
                             printf("save %d calculate, i:%d, j:%d, all i:%d, all j:%d\n",save, i,j,t_h,t_w );
                             save_step += save;
                             add_step += 5 * i * j;*/
+                            //printf("up_temp_sum:%lf,max:%lf\n", up_temp_sum, max_up_temp_sum);
+                            //printf("mul_sum:%lld, s:%lf \n", mul_sum, std::sqrt(region_sq_sum - s_sq_sum) * target_integral_mul[i * t_w + j]);
                             goto next_candidate;
                         }
                     }
@@ -221,15 +225,17 @@ int FastNormalizedCrossCorrelation(
                 }
                 
             }
+        
             // 到这里完成了一次子图和模板图的相关性计算
             double convariance = (double)mul_sum / target_size - temp_mean * target_mean;
             float score = convariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
             if (score > max_score)
             {
                 max_score = score;
+                max_up_sum = max_score * temp_std_var * target_size;
             }
             p[col] = score;
-            
+            //printf("row:%d,col:%d,score:%f\n", row, col, score);
         next_candidate:
             continue;
         }
