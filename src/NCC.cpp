@@ -78,6 +78,7 @@ int NCCPyramid(const cv::Mat& source, const cv::Mat& target, const int level, fl
         y += tpy;
     }
 
+    return error_code::kSuccess;
 }
 
 int BuildPyramidImages(const cv::Mat& src, std::vector<cv::Mat>& py_images, const int level)
