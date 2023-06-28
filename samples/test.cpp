@@ -459,6 +459,10 @@ void test_calculateCovarianceAVX()
 
         std::cout << "image size: " << image_size << std::endl;
 
+        cv::Mat A, B;
+        target.convertTo(A, CV_32FC1);
+        target2.convertTo(B, CV_32FC1);
+
         mycv::Timer_ms ts;
         double mean1, mean2;
         mean1 = mycv::calculateMean(target);
@@ -478,7 +482,7 @@ void test_calculateCovarianceAVX()
         ts.Restart();
         for (size_t i = 0; i < times; i++)
         {
-            conv = mycv::calculateCovarianceAVX(target, target2, mean1, mean2);
+            conv = mycv::calculateCovarianceAVX(A, B, mean1, mean2);
         }
         ts.Duration();
         std::cout << "conv: " << conv << std::endl;
@@ -487,7 +491,7 @@ void test_calculateCovarianceAVX()
         ts.Restart();
         for (size_t i = 0; i < times; i++)
         {
-            conv = mycv::calculateCovarianceAVXFlatten(target, target2, mean1, mean2);
+            conv = mycv::calculateCovarianceAVXFlatten(A, B, mean1, mean2);
         }
         ts.Duration();
         std::cout << "conv: " << conv << std::endl;

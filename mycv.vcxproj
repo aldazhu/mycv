@@ -123,7 +123,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>G:\ipp\install\ipp\2021.7.0\include;;D:\opencv440\opencv\build\include;D:\opencv440\opencv\build\include\opencv2;include;3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>G:\ipp\install\ipp\2021.7.0\lib\intel64;D:\opencv440\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
