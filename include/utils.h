@@ -143,6 +143,12 @@ using Timer_us = Timer<std::chrono::duration<double, std::micro>>;
 using Timer_ns = Timer<std::chrono::duration<double, std::nano>>;
 
 
+inline int CheckImageEmpty(const cv::Mat& image)
+{
+	if (image.empty()) return mycv::error_code::kImageEmpty;
+	return mycv::error_code::kSuccess;
+}
+
 }//end namespace mycv
 
 #endif //!MYCV_UTILS_H_

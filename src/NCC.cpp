@@ -562,7 +562,7 @@ double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a,doub
         return kBadSize;
     }
     
-    //E(XY)
+    //calculate E(XY)
     double sum = 0;
     for (int row = 0; row < A.rows; row++)
     {
@@ -589,6 +589,143 @@ double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a,doub
     //cov(X,Y) = E[ (X-E(x)) * (Y-E(Y)) ] = E(XY) - E(x)E(Y)
     double cov_AB = mean_AB - (mean_a * mean_b);
     
+    return cov_AB;
+}
+
+double calculateCovarianceAVX(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b)
+{
+    if (A.empty() || B.empty())
+    {
+        MYCV_ERROR2(kImageEmpty, "input image is empty");
+        return kImageEmpty;
+    }
+    if (A.cols != B.cols || A.rows != B.rows)
+    {
+        MYCV_ERROR2(kBadSize, "mat A B should be in same size");
+        return kBadSize;
+    }
+    // 一个short类型的数占2个字节，16位，如果是unsigned short的话最大能表示2^16-1=65535,
+    // 两个unsigned char相乘最大为(2^8-1)*(2^8-1)=255*255=65025,也即是说对于CV_8U类型的图片的卷积
+    // 只需要用unsigned short就可以表示了,但是AVX的指令集似乎没有unsigned short的乘法，只有signed short的
+    // 所以只能采用FC_32格式来计算了 shit
+    
+    // 把图片转为FC32
+    cv::Mat A_32F, B_32F;
+    A.convertTo(A_32F, CV_32FC1);
+    B.convertTo(B_32F, CV_32FC1);
+
+    __m256 sum = _mm256_setzero_ps();
+    constexpr int ele_num_per_register = 8; // 每一个256位寄存器能存放的像素个数
+    int col_len_avx = A.cols / ele_num_per_register; // 每一行的像素可以分多少个register
+    int last_start_col_index = col_len_avx * ele_num_per_register; // 余下不能用avx计算的像素的起始index
+    double sum_d = 0.0f;
+    for (int i = 0; i < A.rows; ++i)
+    {
+        auto pa = A_32F.ptr<float>(i);
+        auto pb = B_32F.ptr<float>(i);
+        for (int j = 0; j < last_start_col_index; j += ele_num_per_register)
+        {
+            __m256 a = _mm256_loadu_ps(pa + j);
+            __m256 b = _mm256_loadu_ps(pb + j);
+            sum = _mm256_add_ps(sum, _mm256_mul_ps(a, b));
+        }
+        //处理余下的部分
+        for (int j = last_start_col_index; j < A.cols; ++j)
+            sum_d += (double)(*(pa + j)) * (*(pb + j));
+    }
+    // 将结果从 AVX 寄存器取回
+    float sum_avx[ele_num_per_register];
+    _mm256_storeu_ps(sum_avx, sum);
+    for (int i = 0; i < ele_num_per_register; ++i)
+    {
+        sum_d += sum_avx[i];
+    }
+
+    double mean_AB = sum_d / ((double)A.rows * (double)A.cols);
+
+    if (-1 == mean_a)
+    {
+        mean_a = calculateMean(A);
+    }
+    if (-1 == mean_b)
+    {
+        mean_b = calculateMean(B);
+    }
+
+    //cov(X,Y) = E[ (X-E(x)) * (Y-E(Y)) ] = E(XY) - E(x)E(Y)
+    double cov_AB = mean_AB - (mean_a * mean_b);
+
+    return cov_AB;
+}
+
+double calculateCovarianceAVXFlatten(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b)
+{
+    if (A.empty() || B.empty())
+    {
+        MYCV_ERROR2(kImageEmpty, "input image is empty");
+        return kImageEmpty;
+    }
+    if (A.cols != B.cols || A.rows != B.rows)
+    {
+        MYCV_ERROR2(kBadSize, "mat A B should be in same size");
+        return kBadSize;
+    }
+    // 一个short类型的数占2个字节，16位，如果是unsigned short的话最大能表示2^16-1=65535,
+    // 两个unsigned char相乘最大为(2^8-1)*(2^8-1)=255*255=65025,也即是说对于CV_8U类型的图片的卷积
+    // 只需要用unsigned short就可以表示了,但是AVX的指令集似乎没有unsigned short的乘法，只有signed short的
+    // 所以只能采用FC_32格式来计算了 shit
+
+    // 把图片转为FC32
+    cv::Mat A_32F, B_32F;
+    A.convertTo(A_32F, CV_32FC1);
+    B.convertTo(B_32F, CV_32FC1);
+
+    if (!A_32F.isContinuous() || !B_32F.isContinuous())
+    {
+        return error_code::kNotImplement;
+    }
+
+    __m256 sum = _mm256_setzero_ps();
+    int total_ele_num = A_32F.rows * A_32F.cols;
+    constexpr int ele_num_per_register = 8; // 每一个256位寄存器能存放的像素个数
+    int col_len_avx = total_ele_num / ele_num_per_register; // 可以分多少个register
+    int last_start_col_index = col_len_avx * ele_num_per_register; // 余下不能用avx计算的像素的起始index
+    double sum_d = 0.0f;
+   
+    float* pa = (float*)A_32F.data;
+    float* pb = (float*)B_32F.data;
+    for (size_t i = 0; i < last_start_col_index; i += ele_num_per_register)
+    {
+        __m256 a = _mm256_loadu_ps(pa + i);
+        __m256 b = _mm256_loadu_ps(pb + i);
+        sum = _mm256_add_ps(sum, _mm256_mul_ps(a, b));
+    }
+    //处理余下的部分
+    for (int j = last_start_col_index; j < total_ele_num; ++j)
+        sum_d += (double)(*(pa + j)) * (*(pb + j));
+    
+    // 将结果从 AVX 寄存器取回
+    float sum_avx[ele_num_per_register];
+    _mm256_storeu_ps(sum_avx, sum);
+    for (int i = 0; i < ele_num_per_register; ++i)
+    {
+        sum_d += sum_avx[i];
+    }
+
+    double mean_AB = sum_d / ((double)A.rows * (double)A.cols);
+
+    if (-1 == mean_a)
+    {
+        mean_a = calculateMean(A);
+    }
+    if (-1 == mean_b)
+    {
+        mean_b = calculateMean(B);
+    }
+
+    //cov(X,Y) = E[ (X-E(x)) * (Y-E(Y)) ] = E(XY) - E(x)E(Y)
+    double cov_AB = mean_AB - (mean_a * mean_b);
+
     return cov_AB;
 }
 
@@ -679,6 +816,35 @@ double calculateSquareMean(const cv::Mat& image)
 
     double mean = sum / ((double)image.cols * (double)image.rows);
     return mean;
+}
+
+int CalMeanVar(const cv::Mat& image, float& mean, float& var)
+{
+    //*均值的迭代式 mean[n] = mean[n - 1] + (x[n] - mean[n - 1]) / N, mean[0] = x[0];
+    //*方差的迭代式 var[n] = var[n - 1] + (x[n] - mean[n - 1]) * (x[n] - mean[n]), var[0] = 0;
+    CHECK_RET(CheckImageEmpty(image));
+    
+    float pre_mean = 0.0f;
+    float pre_var = 0.0f;
+    float N = image.rows * image.cols;
+    for (int row = 0; row < image.rows; ++row)
+    {
+        const uchar* p = image.ptr<uchar>(row);
+        for (int col = 0; col < image.cols; ++col)
+        {
+            if (row == 0 && col == 0)
+            {
+                pre_mean = *p;
+                var = 0.0f;
+                continue;
+            }
+            mean = pre_mean + ((float)(*p) - pre_mean) / N;
+            var += ((float)(*p) - pre_mean) * (((float)(*p) - mean));
+            pre_mean = mean;
+        }
+    }
+
+    return error_code::kSuccess;
 }
 
 

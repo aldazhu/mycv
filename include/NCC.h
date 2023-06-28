@@ -113,6 +113,17 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean);
  * @return double : 两个图像的协方差
  */
 double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a=-1,double mean_b=-1);
+
+/**
+ * @brief calculateCovariance的重载函数，去掉默认参数，需要传入两个子图的均值
+ * 在计算协方差时用指令集加速.
+ */
+double calculateCovarianceAVX(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b);
+
+/**
+ * @brief 重载上面函数，在计算协方差时把图片数据从头到尾一次性遍历.
+ */
+double calculateCovarianceAVXFlatten(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b);
     
 /**
  * @brief 计算输入图像的方差，如果已知mean就不再计算mean
@@ -141,6 +152,16 @@ double calculateMean(const cv::Mat &image);
  */
 double calculateSquareMean(const cv::Mat& image);
 
+/**
+ * @brief 采用递推的方式计算图像均值和方差.
+ * 均值的迭代式 mean[n] = mean[n-1] + (x[n] - mean[n-1]) / N, mean[0] = x[0];
+ * 方差的迭代式 var[n] = var[n-1] + (x[n] - mean[n-1]) * (x[n] - mean[n])
+ * @param [in] image : 输入图CV_8UC1
+ * @param [out] mean : 
+ * @param [out] var : 
+ * @return  :
+ */
+int CalMeanVar(const cv::Mat& image, float& mean, float& var);
 
 /**
  * @brief 用FFT实现两个图像的卷积，src: H*W ,kernel: h*w,

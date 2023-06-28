@@ -13,12 +13,13 @@
 
 #include "utils.h"
 
-void cmp_speed()
+void test_CalMeanVarSpeed()
 {
     const int TIMES = 1000;
 
     std::chrono::steady_clock::time_point start_time, end_time;
     double abs_runtime = 0, integral_runtime = 0;
+    mycv::Timer_ms ts;
     for (int size = 100; size < 1000; size += 100)
     {
         cv::Mat target = cv::Mat(cv::Size(size, size), CV_8UC1);
@@ -29,12 +30,51 @@ void cmp_speed()
         const double target_size = (double)t_h * t_w;
         double target_region_sum, target_region_sqsum, target_mean, target_var, target_std_var;
 
-        cv::Mat target_sum, target_sqsum;
-        start_time = std::chrono::steady_clock::now();;
+
+        cv::Mat mean_mat, stddev_mat;
+        spdlog::info("opencv 直接计算target的均值和方差");
+        ts.Restart();
         for (int times = 0; times < TIMES; times++)
         {
-            //mycv::integral(target, target_sum, target_sqsum);
-            cv::integral(target, target_sum, target_sqsum,CV_64F,CV_64F);
+            cv::meanStdDev(target, mean_mat, stddev_mat);
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("opencv mean:{}, std variance:{}\n\n", mean_mat.at<double>(0), stddev_mat.at<double>(0));
+
+        spdlog::info("mycv 直接计算target的均值和方差");
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            target_mean = mycv::calculateMean(target);
+            target_var = mycv::calculateVariance(target, target_mean);
+            target_std_var = std::sqrt(target_var);
+ 
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv mean:{}, std variance:{}\n\n", target_mean, target_std_var);
+
+        spdlog::info("mycv 递推计算均值和方差");
+        float mycv_mean, mycv_var, mycv_stdvar;
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            mycv::CalMeanVar(target, mycv_mean, mycv_var);
+            mycv_stdvar = std::sqrt(mycv_var);
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv mean:{}, std variance:{}", mycv_mean, mycv_stdvar);
+       
+
+        cv::Mat target_sum, target_sqsum;
+        spdlog::info("积分图的方法计算target的均值和方差");
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            mycv::integral(target, target_sum, target_sqsum);
+            //cv::integral(target, target_sum, target_sqsum,CV_64F,CV_64F);
             
             mycv::getRegionSumFromIntegralImage(target_sum, 0, 0, target.cols - 1, target.rows - 1, target_region_sum);
             mycv::getRegionSumFromIntegralImage(target_sqsum, 0, 0, target.cols - 1, target.rows - 1, target_region_sqsum);
@@ -42,32 +82,10 @@ void cmp_speed()
             target_var = (target_region_sqsum - target_mean * target_region_sum) / target_size;
             target_std_var = std::sqrt(target_var);
         }
-        end_time = std::chrono::steady_clock::now();
-
-        integral_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
-        spdlog::info("积分图的方法计算target的均值和方差");
-        spdlog::info("run {0} times,  use {1}ms", TIMES, integral_runtime);
-        spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times,  use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv integral mean:{}, std variance:{}\n\n", target_mean, target_std_var);
         
-        cv::Mat mean_mat, stddev_mat;
-        start_time = std::chrono::steady_clock::now();;
-        for (int times = 0; times < TIMES; times++)
-        {
-            //target_mean = mycv::calculateMean(target);
-            //target_var = mycv::calculateVariance(target, target_mean);
-            //target_std_var = std::sqrt(target_var);
-            cv::meanStdDev(target, mean_mat, stddev_mat);
-
-        }
-        end_time = std::chrono::steady_clock::now();
-
-        abs_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
-        spdlog::info("直接计算target的均值和方差");
-        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
-        //spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
-        spdlog::info("opencv mean:{}, std variance:{}", mean_mat.at<double>(0), stddev_mat.at<double>(0));
-        
-        spdlog::info("abs_runtime / integral_image = {}",abs_runtime/integral_runtime);
 
     }
     
@@ -128,13 +146,13 @@ void test_integralImage()
 void test_NCC_speed()
 {
     const int TIMES = 10;
-    constexpr int pyramid_level = 4;
+    constexpr int pyramid_level = 5;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
     std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
     std::string log_path = "ncc_speed.txt";
-    cv::Mat source, target, result;
-    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
-    target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    cv::Mat source, target, result,src,tar;
+    src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    tar = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
     std::chrono::steady_clock::time_point start_time,end_time;
     double myncc_runtime = 0, opencv_runtime = 0;
 
@@ -147,10 +165,10 @@ void test_NCC_speed()
     cv::Point min_loc, max_loc;
     for (int src_size = 500; src_size <= 1200; src_size += 100)
     {
-        /*source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
-        target = cv::Mat(cv::Size(100, 100), CV_8UC1);
-        cv::randu(source,cv::Scalar(0),cv::Scalar(255));
-        cv::randu(target,cv::Scalar(0),cv::Scalar(255));*/
+        float ratio = (float)src_size / (float)src.cols;
+        cv::resize(src, source, cv::Size(), ratio, ratio);
+        cv::resize(tar, target, cv::Size(), ratio, ratio);
+        
         logger->info("src_size:(h,w)=({0},{1}), target_size:(h,w)=({2},{3})",
             source.rows,source.cols,target.rows,target.cols);
         // my NCC test
@@ -299,6 +317,7 @@ void test_hist()
 }
 
 
+
 void del()
 {
     std::cout << DBL_MAX << std::endl;
@@ -351,6 +370,133 @@ void test_Pyramid()
 }
 
 
+float vectorDotProductAVX(const float* vectorA, const float* vectorB, int length) {
+    int avxLength = length / 8; // 每次处理 8 个浮点数
+
+    __m256 sum = _mm256_setzero_ps(); // 初始化累加和为 0
+
+    for (int i = 0; i < avxLength; ++i) {
+        __m256 vecA = _mm256_loadu_ps(vectorA + i * 8); // 加载 8 个浮点数到 AVX 寄存器
+        __m256 vecB = _mm256_loadu_ps(vectorB + i * 8); // 加载 8 个浮点数到 AVX 寄存器
+
+        sum = _mm256_add_ps(sum, _mm256_mul_ps(vecA, vecB)); // 使用 AVX 指令进行乘法和累加
+    }
+
+    float dotProduct = 0.0f;
+    // 处理剩余的元素
+    for (int i = avxLength * 8; i < length; ++i) {
+        dotProduct += vectorA[i] * vectorB[i];
+    }
+
+    // 将结果从 AVX 寄存器取回
+    float result[8];
+    _mm256_storeu_ps(result, sum);
+
+    // 对结果求和，得到最终的内积
+    
+    for (int i = 0; i < 8; ++i) {
+        dotProduct += result[i];
+    }
+
+    return dotProduct;
+}
+float vectorDotProduct(const float* vectorA, const float* vectorB, int length)
+{
+    float dot_product = 0.0f;
+    for (size_t i = 0; i < length; i++)
+    {
+        dot_product += vectorA[i] * vectorB[i];
+    }
+    return dot_product;
+}
+
+void test_vectorDotProductAVX()
+{
+    constexpr int length = 1000;
+    constexpr int times = 100000;
+    std::unique_ptr<float[]> a = std::make_unique<float[]>(length);
+    std::unique_ptr<float[]> b = std::make_unique<float[]>(length);
+    for (int i = 0; i < length; ++i)
+    {
+        a[i] = rand() % 10;
+        b[i] = rand() % 10;
+    }
+
+    mycv::Timer_us ts;
+    float result = 0;
+
+    std::cout << "AVX: ";
+    ts.Restart();
+    for (int i = 0; i < times; ++i)
+        result = vectorDotProductAVX(a.get(), b.get(), length);
+    ts.Duration();
+    std::cout << "res: " << result << std::endl;
+
+    std::cout << "notmal:";
+    ts.Restart();
+    for (int i = 0; i < times; ++i)
+        result = vectorDotProduct(a.get(), b.get(), length);
+    ts.Duration();
+    std::cout << "res: " << result << std::endl;
+
+
+}
+
+
+void test_calculateCovarianceAVX()
+{
+    const int times = 1000;
+    
+    for (int image_size = 10; image_size < 500; image_size += 10) {
+        cv::Mat target = cv::Mat(cv::Size(image_size, image_size), CV_8UC1);
+        cv::Mat target2 = cv::Mat(cv::Size(image_size, image_size), CV_8UC1);
+        cv::randu(target, cv::Scalar(0), cv::Scalar(255));
+        cv::randu(target2, cv::Scalar(0), cv::Scalar(255));
+
+        std::cout << "image size: " << image_size << std::endl;
+
+        mycv::Timer_ms ts;
+        double mean1, mean2;
+        mean1 = mycv::calculateMean(target);
+        mean2 = mycv::calculateMean(target2);
+
+        double conv = 0;
+        std::cout << "normal calculateCovariance";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovariance(target, target2, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
+
+        std::cout << "avx calculateCovarianceAVX";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovarianceAVX(target, target2, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
+
+        std::cout << "avx calculateCovarianceAVXFlatten";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovarianceAVXFlatten(target, target2, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
+    }
+}
+
+void del_avx()
+{
+    cv::Mat A = cv::Mat::ones(cv::Size(200, 200), CV_32FC1)*255;
+    
+
+}
+
 int main()
 {
 
@@ -362,12 +508,15 @@ int main()
     //test_NCC();
     //test_integralImage();
 	//test_IntegralSpeed();
-    test_NCC_speed();
-    //cmp_speed();
+    //test_NCC_speed();
+    //test_CalMeanVarSpeed();
     //del();
     
     //test_Pyramid();
+    //test_vectorDotProductAVX();
    
+    test_calculateCovarianceAVX();
+
     //system("pause");
     return 0;
 }
