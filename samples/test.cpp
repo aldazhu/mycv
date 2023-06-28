@@ -153,6 +153,8 @@ void test_NCC_speed()
     cv::Mat source, target, result,src,tar;
     src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     tar = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    source = src;
+    target = tar;
     std::chrono::steady_clock::time_point start_time,end_time;
     double myncc_runtime = 0, opencv_runtime = 0;
 
@@ -165,9 +167,9 @@ void test_NCC_speed()
     cv::Point min_loc, max_loc;
     for (int src_size = 500; src_size <= 1200; src_size += 100)
     {
-        float ratio = (float)src_size / (float)src.cols;
-        cv::resize(src, source, cv::Size(), ratio, ratio);
-        cv::resize(tar, target, cv::Size(), ratio, ratio);
+        //float ratio = (float)src_size / (float)src.cols;
+        //cv::resize(src, source, cv::Size(), ratio, ratio);
+        //cv::resize(tar, target, cv::Size(), ratio, ratio);
         
         logger->info("src_size:(h,w)=({0},{1}), target_size:(h,w)=({2},{3})",
             source.rows,source.cols,target.rows,target.cols);
@@ -412,33 +414,35 @@ float vectorDotProduct(const float* vectorA, const float* vectorB, int length)
 
 void test_vectorDotProductAVX()
 {
-    constexpr int length = 1000;
-    constexpr int times = 100000;
-    std::unique_ptr<float[]> a = std::make_unique<float[]>(length);
-    std::unique_ptr<float[]> b = std::make_unique<float[]>(length);
-    for (int i = 0; i < length; ++i)
+    for (int length = 100; length < 10000; length += 100)
     {
-        a[i] = rand() % 10;
-        b[i] = rand() % 10;
+        std::cout << "vector length :" << length << std::endl;
+        constexpr int times = 100000;
+        std::unique_ptr<float[]> a = std::make_unique<float[]>(length);
+        std::unique_ptr<float[]> b = std::make_unique<float[]>(length);
+        for (int i = 0; i < length; ++i)
+        {
+            a[i] = rand() % 10;
+            b[i] = rand() % 10;
+        }
+
+        mycv::Timer_us ts;
+        float result = 0;
+
+        std::cout << "AVX: ";
+        ts.Restart();
+        for (int i = 0; i < times; ++i)
+            result = vectorDotProductAVX(a.get(), b.get(), length);
+        ts.Duration();
+        std::cout << "res: " << result << std::endl;
+
+        std::cout << "notmal:";
+        ts.Restart();
+        for (int i = 0; i < times; ++i)
+            result = vectorDotProduct(a.get(), b.get(), length);
+        ts.Duration();
+        std::cout << "res: " << result << std::endl;;
     }
-
-    mycv::Timer_us ts;
-    float result = 0;
-
-    std::cout << "AVX: ";
-    ts.Restart();
-    for (int i = 0; i < times; ++i)
-        result = vectorDotProductAVX(a.get(), b.get(), length);
-    ts.Duration();
-    std::cout << "res: " << result << std::endl;
-
-    std::cout << "notmal:";
-    ts.Restart();
-    for (int i = 0; i < times; ++i)
-        result = vectorDotProduct(a.get(), b.get(), length);
-    ts.Duration();
-    std::cout << "res: " << result << std::endl;
-
 
 }
 

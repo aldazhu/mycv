@@ -161,7 +161,7 @@ int NCC(const cv::Mat& source, const cv::Mat& target, float& x, float& y, float&
             double temp_mean = region_sum / target_size;
 
             //计算两个图的协方差
-            double cov = calculateCovariance(temp, target, temp_mean, target_mean);
+            double cov = calculateCovarianceAVX(temp, target, temp_mean, target_mean);
 
             //计算source中对应子块的方差
             getRegionSumFromIntegralImage(sq_integral, col, row, col + t_w - 1, row + t_h - 1, region_sq_sum);
@@ -611,31 +611,31 @@ double calculateCovarianceAVX(const cv::Mat& A, const cv::Mat& B, double mean_a,
     
     // 把图片转为FC32
     cv::Mat A_32F, B_32F;
-    A.convertTo(A_32F, CV_32FC1);
-    B.convertTo(B_32F, CV_32FC1);
+    A.convertTo(A_32F, CV_64FC1);
+    B.convertTo(B_32F, CV_64FC1);
 
-    __m256 sum = _mm256_setzero_ps();
-    constexpr int ele_num_per_register = 8; // 每一个256位寄存器能存放的像素个数
+    __m256d sum = _mm256_setzero_pd();
+    constexpr int ele_num_per_register = 4; // 每一个256位寄存器能存放的像素个数
     int col_len_avx = A.cols / ele_num_per_register; // 每一行的像素可以分多少个register
     int last_start_col_index = col_len_avx * ele_num_per_register; // 余下不能用avx计算的像素的起始index
     double sum_d = 0.0f;
     for (int i = 0; i < A.rows; ++i)
     {
-        auto pa = A_32F.ptr<float>(i);
-        auto pb = B_32F.ptr<float>(i);
+        auto pa = A_32F.ptr<double>(i);
+        auto pb = B_32F.ptr<double>(i);
         for (int j = 0; j < last_start_col_index; j += ele_num_per_register)
         {
-            __m256 a = _mm256_loadu_ps(pa + j);
-            __m256 b = _mm256_loadu_ps(pb + j);
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(a, b));
+            __m256d a = _mm256_loadu_pd(pa + j);
+            __m256d b = _mm256_loadu_pd(pb + j);
+            sum = _mm256_add_pd(sum, _mm256_mul_pd(a, b));
         }
         //处理余下的部分
         for (int j = last_start_col_index; j < A.cols; ++j)
             sum_d += (double)(*(pa + j)) * (*(pb + j));
     }
     // 将结果从 AVX 寄存器取回
-    float sum_avx[ele_num_per_register];
-    _mm256_storeu_ps(sum_avx, sum);
+    double sum_avx[ele_num_per_register];
+    _mm256_storeu_pd(sum_avx, sum);
     for (int i = 0; i < ele_num_per_register; ++i)
     {
         sum_d += sum_avx[i];
