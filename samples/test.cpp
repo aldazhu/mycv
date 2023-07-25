@@ -504,21 +504,18 @@ void del_avx()
 
 void Test_Resize()
 {
-    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
     
     auto src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     cv::Mat dst;
 
-    mycv::showImage(src, "src");
-    mycv::Resize(src, dst, 800, 800, 0);
+    mycv::showImage(src, "src",1,1);
+
+    mycv::Resize(src, dst, 500, 500, 0);
     mycv::showImage(dst, "1",1,1);
 
-    mycv::Resize(src, dst, 1000, 200, 0);
-    mycv::showImage(dst, "2",1,1);
-
-    mycv::Resize(src, dst, 2000, 2000, 0);
-    mycv::showImage(dst, "3",0,1);
-
+    mycv::Resize(src, dst, 500, 500, 1);
+    mycv::showImage(dst, "2",0,1);
 
 }
 
