@@ -36,6 +36,9 @@
 #endif
 
 
+constexpr double PI = 3.151492653;
+
+
 #define MYCV_ERROR2(code,msg) mycv::error(code,msg,mycv_func,__FILE__,__LINE__)
 
 #define MYCV_ERROR1(code) mycv::error(code,"",mycv_func,__FILE__,__LINE__)

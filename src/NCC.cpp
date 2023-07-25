@@ -161,7 +161,7 @@ int NCC(const cv::Mat& source, const cv::Mat& target, float& x, float& y, float&
             double temp_mean = region_sum / target_size;
 
             //计算两个图的协方差
-            double cov = calculateCovarianceAVX(temp, target, temp_mean, target_mean);
+            double cov = calculateCovariance(temp, target, temp_mean, target_mean);
 
             //计算source中对应子块的方差
             getRegionSumFromIntegralImage(sq_integral, col, row, col + t_w - 1, row + t_h - 1, region_sq_sum);
@@ -385,7 +385,7 @@ int FastNormalizedCrossCorrelation(
         
             // 到这里完成了一次子图和模板图的相关性计算
             double convariance = (double)mul_sum / target_size - temp_mean * target_mean;
-            float score = convariance / ((temp_std_var + 0.0000001) * (target_std_var + 0.0000001));
+            float score = convariance / (temp_std_var  * target_std_var + 0.0000001);
             if (score > max_score)
             {
                 max_score = score;
@@ -629,6 +629,7 @@ double calculateCovarianceAVX(const cv::Mat& A, const cv::Mat& B, double mean_a,
             __m256 a = _mm256_loadu_ps((pa + j));
             __m256 b = _mm256_loadu_ps((pb + j));
             sum = _mm256_add_ps(sum, _mm256_mul_ps(a, b));
+            
         }
         //处理余下的部分
         for (int j = last_start_col_index; j < A.cols; ++j)

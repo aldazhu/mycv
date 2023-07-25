@@ -146,9 +146,9 @@ void test_integralImage()
 void test_NCC_speed()
 {
     const int TIMES = 10;
-    constexpr int pyramid_level = 5;
+    constexpr int pyramid_level = 4;
     std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
-    std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
+    std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
     std::string log_path = "ncc_speed.txt";
     cv::Mat source, target, result,src,tar;
     src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
@@ -318,15 +318,12 @@ void test_hist()
 
 }
 
-
-
 void del()
 {
     std::cout << DBL_MAX << std::endl;
     std::cout << FLT_MAX << std::endl;
 
 }
-
 
 void test_IntegralSpeed()
 {
@@ -371,7 +368,6 @@ void test_Pyramid()
 
 }
 
-
 float vectorDotProductAVX(const float* vectorA, const float* vectorB, int length) {
     int avxLength = length / 8; // 每次处理 8 个浮点数
 
@@ -402,6 +398,7 @@ float vectorDotProductAVX(const float* vectorA, const float* vectorB, int length
 
     return dotProduct;
 }
+
 float vectorDotProduct(const float* vectorA, const float* vectorB, int length)
 {
     float dot_product = 0.0f;
@@ -445,7 +442,6 @@ void test_vectorDotProductAVX()
     }
 
 }
-
 
 void test_calculateCovarianceAVX()
 {
@@ -505,6 +501,27 @@ void del_avx()
 
 }
 
+
+void Test_Resize()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+    
+    auto src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    cv::Mat dst;
+
+    mycv::showImage(src, "src");
+    mycv::Resize(src, dst, 800, 800, 0);
+    mycv::showImage(dst, "1",1,1);
+
+    mycv::Resize(src, dst, 1000, 200, 0);
+    mycv::showImage(dst, "2",1,1);
+
+    mycv::Resize(src, dst, 2000, 2000, 0);
+    mycv::showImage(dst, "3",0,1);
+
+
+}
+
 int main()
 {
 
@@ -523,7 +540,9 @@ int main()
     //test_Pyramid();
     //test_vectorDotProductAVX();
    
-    test_calculateCovarianceAVX();
+    //test_calculateCovarianceAVX();
+
+    Test_Resize();
 
     //system("pause");
     return 0;
