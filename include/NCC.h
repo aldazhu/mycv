@@ -17,6 +17,33 @@
 namespace mycv{
 
 /**
+ * @brief 构建图像金字塔.
+ * 
+ * @param [in] src : 输入的原图CV_8UC1
+ * @param [out] py_images : 输出的金子塔图像,0:source, 1:source/2, 2:source/4
+ * @param [in] level : 金字塔的级数
+ * @return  :
+ */
+int BuildPyramidImages(const cv::Mat& src, std::vector<cv::Mat>& py_images, const int level);
+
+/**
+ * @brief 带金字塔的NCC.
+ * 
+ * @param [in] source : 搜索图CV_8UC1格式
+ * @param [in] target : 模板图CV_8UC1格式
+ * @param [in] level : 金字塔层数
+ * @param [out] x : 
+ * @param [out] y : 
+ * @param [out] score : 
+ * @return  :
+ */
+int NCCPyramid(const cv::Mat& source, const cv::Mat& target, const int level, float& x, float& y, float& score);
+
+int NCC(const cv::Mat& source, const cv::Mat& target, float& x, float& y, float& score);
+
+
+
+/**
  * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时
  * 用(Pearson)相关系数来度量。
  * r=cov(X,Y)/(sigma(X) * sigma(Y))
@@ -35,6 +62,12 @@ int NormalizedCrossCorrelation(
     const cv::Mat &target,
     cv::Mat &result
     );
+
+int FastNormalizedCrossCorrelation(
+    const cv::Mat& source,
+    const cv::Mat& target,
+    cv::Mat& result
+);
 
 /**
  * @brief 模板匹配，归一化交叉相关算法。衡量模板和待匹配图像的相似性时
@@ -80,6 +113,17 @@ int calculateRegionMean(const cv::Mat &input,const cv::Rect &ROI,double &mean);
  * @return double : 两个图像的协方差
  */
 double calculateCovariance(const cv::Mat &A, const cv::Mat &B,double mean_a=-1,double mean_b=-1);
+
+/**
+ * @brief calculateCovariance的重载函数，去掉默认参数，需要传入两个子图的均值
+ * 在计算协方差时用指令集加速.
+ */
+double calculateCovarianceAVX(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b);
+
+/**
+ * @brief 重载上面函数，在计算协方差时把图片数据从头到尾一次性遍历.
+ */
+double calculateCovarianceAVXFlatten(const cv::Mat& A, const cv::Mat& B, double mean_a, double mean_b);
     
 /**
  * @brief 计算输入图像的方差，如果已知mean就不再计算mean
@@ -99,6 +143,25 @@ double calculateVariance(const cv::Mat &image,double mean=-1);
  */
 double calculateMean(const cv::Mat &image);
 
+
+/**
+ * @brief 计算输入图的灰度平方均值，E(X^2)
+ *
+ * @param image  : 输入图CV_8UC1
+ * @return double ： 输入图像的灰度平方均值，
+ */
+double calculateSquareMean(const cv::Mat& image);
+
+/**
+ * @brief 采用递推的方式计算图像均值和方差.
+ * 均值的迭代式 mean[n] = mean[n-1] + (x[n] - mean[n-1]) / N, mean[0] = x[0];
+ * 方差的迭代式 var[n] = var[n-1] + (x[n] - mean[n-1]) * (x[n] - mean[n])
+ * @param [in] image : 输入图CV_8UC1
+ * @param [out] mean : 
+ * @param [out] var : 
+ * @return  :
+ */
+int CalMeanVar(const cv::Mat& image, float& mean, float& var);
 
 /**
  * @brief 用FFT实现两个图像的卷积，src: H*W ,kernel: h*w,

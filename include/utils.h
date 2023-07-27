@@ -31,7 +31,9 @@ enum error_code{
     kOutOfRange,
     kBadSize,
     kBadDepth,
-    kBadInput
+    kBadInput,
+	kNotImplement,
+	kDoseNotSupportImageType,
 };
 
 /**
@@ -77,7 +79,7 @@ double compareArray(TA* A, TB* B,int n)
 {
     if(nullptr == A || nullptr == B)
     {
-        MYCV_ERROR(mycv::kBadInput,"input array is none");
+        MYCV_ERROR2(mycv::kBadInput,"input array is none");
         throw "input array is none!";
     }
 
@@ -91,9 +93,61 @@ double compareArray(TA* A, TB* B,int n)
 }
 
 
+/**
+ * @brief 计时工具.
+ */
+template <typename Time_T>
+class Timer
+{
+public:
+
+	Timer()
+	{
+		start = std::chrono::steady_clock::now();
+	}
+
+	void Restart()
+	{
+		start = std::chrono::steady_clock::now();
+	}
+
+	double Duration()
+	{
+		auto end = std::chrono::steady_clock::now();
+		auto duration = std::chrono::duration_cast<Time_T>(end - start);
+		//std::cout << "Run " << duration << "\n" << std::flush;;// C++ 20 重载了operator<<
+
+		std::cout << "Run " << duration.count();
+		
+		if (std::is_same<std::chrono::duration<double, std::micro>, Time_T>()) {
+			std::cout << " us\n";
+		}
+		else if (std::is_same<std::chrono::duration<double, std::milli>, Time_T>()) {
+			std::cout << " ms\n";
+		}
+		else if (std::is_same<std::chrono::duration<double, std::nano>, Time_T>()) {
+			std::cout << " ns\n";
+		}
+
+		return duration.count();
+	}
+
+	~Timer() = default;
+
+	std::chrono::steady_clock::time_point start;
+
+};
+
+using Timer_ms = Timer<std::chrono::duration<double, std::milli>>;
+using Timer_us = Timer<std::chrono::duration<double, std::micro>>;
+using Timer_ns = Timer<std::chrono::duration<double, std::nano>>;
 
 
-
+inline int CheckImageEmpty(const cv::Mat& image)
+{
+	if (image.empty()) return mycv::error_code::kImageEmpty;
+	return mycv::error_code::kSuccess;
+}
 
 }//end namespace mycv
 
