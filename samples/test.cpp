@@ -504,7 +504,7 @@ void del_avx()
 
 void Test_Resize()
 {
-    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+    std::string src_path = "data/target.jpg";
     
     auto src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     cv::Mat dst;

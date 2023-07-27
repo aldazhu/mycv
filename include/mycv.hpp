@@ -11,7 +11,10 @@
 #ifndef MYCV_MYCV_HPP_
 #define MYCV_MYCV_HPP_
 
+#ifdef HAS_IPP
 #include "ipp.h"
+#endif
+
 
 #include "utils.h"
 #include "mycv_def.h"
