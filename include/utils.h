@@ -93,6 +93,8 @@ double compareArray(TA* A, TB* B,int n)
 
 
 
+
+
 }//end namespace mycv
 
 #endif //!MYCV_UTILS_H_

@@ -29,6 +29,9 @@ namespace mycv
  */
 int integral(const cv::Mat &image,cv::Mat &integral_image);
 
+
+int integralAVX(const cv::Mat& image, cv::Mat& integral_image);
+
 /**
  * @brief 计算输入图的积分图,为了提高计算效率，可以让积分图比输入图多一行一列，
  * 具体的就是在原图左边插入一列0，上面插入一行0，设原图为I，积分图为SAT(summed area table)

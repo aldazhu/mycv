@@ -223,11 +223,69 @@ void del()
 }
 
 
+
+void compute_integral_image_avx(float* img, float* integral_img, int width, int height)
+{
+    // Compute first row and column of integral image
+    for (int i = 0; i < width; i++)
+        integral_img[i] = img[i];
+    for (int i = 1; i < height; i++)
+        integral_img[i * width] = img[i * width] + integral_img[(i - 1) * width];
+
+    // Compute remaining cells using AVX
+    __m256 sum = _mm256_load_ps(&img[0]);
+    __m256 prev_sum = sum;
+    __m256i index_incr = _mm256_setr_epi32(1, 2, 3, 4, 5, 6, 7, 8);
+    for (int i = 1; i < height; i++) {
+        for (int j = 1; j < width; j += 8) {
+            int index = i * width + j;
+            __m256 pixels = _mm256_load_ps(&img[index]);
+            sum = _mm256_add_ps(sum, pixels);
+            __m256i prev_row_index = _mm256_set1_epi32((i - 1) * width + j - 1);
+            __m256i curr_row_index = _mm256_set_epi32(index + 7, index + 6, index + 5, index + 4, index + 3, index + 2, index + 1, index);
+            __m256 prev_row_pixels = _mm256_i32gather_ps(integral_img, prev_row_index, sizeof(float));
+            __m256 curr_row_pixels = _mm256_i32gather_ps(integral_img, curr_row_index, sizeof(float));
+            __m256 result = _mm256_add_ps(_mm256_add_ps(curr_row_pixels, prev_row_pixels), _mm256_add_ps(sum, prev_sum));
+            _mm256_store_ps(&integral_img[index], result);
+            prev_sum = sum;
+            sum = _mm256_permutevar8x32_ps(sum, index_incr);
+        }
+    }
+}
+
+
+
+void del_demo()
+{
+    std::string src_path = "data\\source.jfif";
+    std::string target_path = "data\\target.jfif";
+    cv::Mat source, target, result;
+    //source = cv::imread(src_path);
+    target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+
+    int width = target.cols;
+    int height = target.rows;
+
+    cv::Mat img,integral_opcv;
+    target.convertTo(img, CV_32FC1);
+    cv::Mat integral_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);;
+    compute_integral_image_avx((float*)img.data, (float*)integral_image.data, width, height);
+    cv::integral(target, integral_opcv, CV_32F);
+
+    mycv::showImage(integral_opcv, "opv");
+    mycv::showImage(integral_image, "integral",0);
+    
+
+    cv::destroyAllWindows();
+
+}
+
 int main()
 {
+    del_demo();
     //test_NCC();
     //test_integralImage();
-    test_NCC_speed();
+    //test_NCC_speed();
     //cmp_speed();
     //del();
     system("pause");
