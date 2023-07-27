@@ -7,12 +7,19 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
-void cmp_speed()
+#include "mycv.hpp"
+
+#include "threshold.h"
+
+#include "utils.h"
+
+void test_CalMeanVarSpeed()
 {
     const int TIMES = 1000;
 
     std::chrono::steady_clock::time_point start_time, end_time;
     double abs_runtime = 0, integral_runtime = 0;
+    mycv::Timer_ms ts;
     for (int size = 100; size < 1000; size += 100)
     {
         cv::Mat target = cv::Mat(cv::Size(size, size), CV_8UC1);
@@ -23,12 +30,51 @@ void cmp_speed()
         const double target_size = (double)t_h * t_w;
         double target_region_sum, target_region_sqsum, target_mean, target_var, target_std_var;
 
-        cv::Mat target_sum, target_sqsum;
-        start_time = std::chrono::steady_clock::now();;
+
+        cv::Mat mean_mat, stddev_mat;
+        spdlog::info("opencv 直接计算target的均值和方差");
+        ts.Restart();
         for (int times = 0; times < TIMES; times++)
         {
-            //mycv::integral(target, target_sum, target_sqsum);
-            cv::integral(target, target_sum, target_sqsum,CV_64F,CV_64F);
+            cv::meanStdDev(target, mean_mat, stddev_mat);
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("opencv mean:{}, std variance:{}\n\n", mean_mat.at<double>(0), stddev_mat.at<double>(0));
+
+        spdlog::info("mycv 直接计算target的均值和方差");
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            target_mean = mycv::calculateMean(target);
+            target_var = mycv::calculateVariance(target, target_mean);
+            target_std_var = std::sqrt(target_var);
+ 
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv mean:{}, std variance:{}\n\n", target_mean, target_std_var);
+
+        spdlog::info("mycv 递推计算均值和方差");
+        float mycv_mean, mycv_var, mycv_stdvar;
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            mycv::CalMeanVar(target, mycv_mean, mycv_var);
+            mycv_stdvar = std::sqrt(mycv_var);
+        }
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv mean:{}, std variance:{}", mycv_mean, mycv_stdvar);
+       
+
+        cv::Mat target_sum, target_sqsum;
+        spdlog::info("积分图的方法计算target的均值和方差");
+        ts.Restart();
+        for (int times = 0; times < TIMES; times++)
+        {
+            mycv::integral(target, target_sum, target_sqsum);
+            //cv::integral(target, target_sum, target_sqsum,CV_64F,CV_64F);
             
             mycv::getRegionSumFromIntegralImage(target_sum, 0, 0, target.cols - 1, target.rows - 1, target_region_sum);
             mycv::getRegionSumFromIntegralImage(target_sqsum, 0, 0, target.cols - 1, target.rows - 1, target_region_sqsum);
@@ -36,32 +82,10 @@ void cmp_speed()
             target_var = (target_region_sqsum - target_mean * target_region_sum) / target_size;
             target_std_var = std::sqrt(target_var);
         }
-        end_time = std::chrono::steady_clock::now();
-
-        integral_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
-        spdlog::info("����ͼ�ķ�������target�ľ�ֵ�ͷ���");
-        spdlog::info("run {0} times,  use {1}ms", TIMES, integral_runtime);
-        spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
+        abs_runtime = ts.Duration();
+        spdlog::info("run {0} times,  use {1}ms", TIMES, abs_runtime);
+        spdlog::info("mycv integral mean:{}, std variance:{}\n\n", target_mean, target_std_var);
         
-        cv::Mat mean_mat, stddev_mat;
-        start_time = std::chrono::steady_clock::now();;
-        for (int times = 0; times < TIMES; times++)
-        {
-            //target_mean = mycv::calculateMean(target);
-            //target_var = mycv::calculateVariance(target, target_mean);
-            //target_std_var = std::sqrt(target_var);
-            cv::meanStdDev(target, mean_mat, stddev_mat);
-
-        }
-        end_time = std::chrono::steady_clock::now();
-
-        abs_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() ;
-        spdlog::info("ֱ�Ӽ���target�ľ�ֵ�ͷ���");
-        spdlog::info("run {0} times, use {1}ms", TIMES, abs_runtime);
-        //spdlog::info("mean:{}, std variance:{}", target_mean, target_std_var);
-        spdlog::info("opencv mean:{}, std variance:{}", mean_mat.at<double>(0), stddev_mat.at<double>(0));
-        
-        spdlog::info("abs_runtime / integral_image = {}",abs_runtime/integral_runtime);
 
     }
     
@@ -71,7 +95,7 @@ void test_error_code()
 {
     int code = mycv::kImageEmpty;
     std::string msg = "test error";
-    MYCV_ERROR(code, msg);
+    MYCV_ERROR2(code, msg);
 
 }
 
@@ -82,14 +106,14 @@ void test_integralImage()
     cv::Mat source, result,opencv_sum,opencv_sqsum;
     source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
     mycv::integral(source, result);
-    cv::integral(source, opencv_sum,opencv_sqsum, CV_64F,CV_64F);
+    cv::integral(source, opencv_sum,opencv_sqsum, CV_32F,CV_64F);
     mycv::showImage(source,"source");
     mycv::showImage(opencv_sum,"opencv integral");
     mycv::showImage(result, "integral",0);
 
     //another integral image
     cv::Mat integral_image, integral_sq;
-    mycv::integral(source, integral_image, integral_sq);
+    mycv::integralIPP(source, integral_image, integral_sq);
 
     
     
@@ -113,8 +137,8 @@ void test_integralImage()
     integral_image.convertTo(integral_image, CV_8U, 255, 0);
     cv::normalize(integral_sq, integral_sq, 1.0, 0.0, cv::NORM_MINMAX);
     integral_sq.convertTo(integral_sq, CV_8U, 255, 0);
-    cv::imwrite("data\\integral.png", integral_image);
-    cv::imwrite("data\\integral_sq.png", integral_sq);
+    //cv::imwrite("data\\integral.png", integral_image);
+    //cv::imwrite("data\\integral_sq.png", integral_sq);
 
 
 }
@@ -122,26 +146,31 @@ void test_integralImage()
 void test_NCC_speed()
 {
     const int TIMES = 10;
-    std::string src_path = "data\\source.jfif";
-    std::string target_path = "data\\target.jfif";
+    constexpr int pyramid_level = 4;
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+    std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
     std::string log_path = "ncc_speed.txt";
-    cv::Mat source, target, result;
-    //source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
-    //target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    cv::Mat source, target, result,src,tar;
+    src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    tar = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
+    source = src;
+    target = tar;
     std::chrono::steady_clock::time_point start_time,end_time;
     double myncc_runtime = 0, opencv_runtime = 0;
 
+    float x, y, score;
+
     auto logger = spdlog::basic_logger_mt("NCC", log_path);
-    logger->set_level(spdlog::level::critical);
+    logger->set_level(spdlog::level::err);
     // location
     double min_value, max_value;
     cv::Point min_loc, max_loc;
     for (int src_size = 500; src_size <= 1200; src_size += 100)
     {
-        source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
-        target = cv::Mat(cv::Size(100, 100), CV_8UC1);
-        cv::randu(source,cv::Scalar(0),cv::Scalar(255));
-        cv::randu(target,cv::Scalar(0),cv::Scalar(255));
+        //float ratio = (float)src_size / (float)src.cols;
+        //cv::resize(src, source, cv::Size(), ratio, ratio);
+        //cv::resize(tar, target, cv::Size(), ratio, ratio);
+        
         logger->info("src_size:(h,w)=({0},{1}), target_size:(h,w)=({2},{3})",
             source.rows,source.cols,target.rows,target.cols);
         // my NCC test
@@ -150,21 +179,25 @@ void test_NCC_speed()
 
         //warm up
         //mycv::NormalizedCrossCorrelation(source, target, result);
-        mycv::NormalizedCrossCorrelationFFT(source, target, result);
+        //mycv::NormalizedCrossCorrelationFFT(source, target, result);
 
         start_time = std::chrono::steady_clock::now();;
         for (int n = 0; n < TIMES; n++)
         {
+            mycv::NCCPyramid(source, target, pyramid_level, x, y, score);
             //mycv::NormalizedCrossCorrelation(source, target, result);
-            mycv::NormalizedCrossCorrelationFFT(source, target, result);
+            //mycv::FastNormalizedCrossCorrelation(source, target, result);
+            //mycv::NormalizedCrossCorrelationFFT(source, target, result);
         }
-        end_time = std::chrono::steady_clock::now();;
+        end_time = std::chrono::steady_clock::now();
         myncc_runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / TIMES;
         printf("my NCC run %d times,average use %f ms \n", TIMES, myncc_runtime);
 
-        cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        //cv::minMaxLoc(result, &min_value, &max_value, &min_loc, &max_loc);
+        //printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
+        //    min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
         printf("min_value=%f , min_loc(x,y)=(%d,%d), \t max_value=%f,max_loc(x,y)=(%d,%d)\n",
-            min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
+            0.0, 0, 0, score, (int)x, (int)y);
 
         logger->info("my NCC run {0} times,average use {1} ms \n", TIMES, myncc_runtime);
         logger->info("my NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
@@ -191,6 +224,8 @@ void test_NCC_speed()
         logger->info("opencv NCC min_value = {0}, min_loc(x, y) = ({1}, {2}), \t max_value = {3}, max_loc(x, y) = ({4}, {5})\n",
             min_value, min_loc.x, min_loc.y, max_value, max_loc.x, max_loc.y);
         logger->info("speed : myncc_runtime / opencv_runtime = {}", (int)(myncc_runtime / opencv_runtime));
+
+        printf("opencv run faster %f times\n", myncc_runtime / opencv_runtime);
     }
   
 
@@ -198,13 +233,13 @@ void test_NCC_speed()
 
 void test_NCC()
 {
-    std::string src_path = "data\\source.jfif";
-    std::string target_path = "data\\target.jfif";
+	std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+	std::string target_path = "H:/myProjects/work/mycv-master/mycv-master/data/target2.jpg";
     cv::Mat source, target,result;
     source = cv::imread(src_path,cv::IMREAD_GRAYSCALE);
     target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
 
-    mycv::NormalizedCrossCorrelation(source, target, result);
+    mycv::FastNormalizedCrossCorrelation(source, target, result);
     mycv::showImage(target, "target");
     mycv::showImage(source, "source");
     mycv::showImage(result, "result", 0);
@@ -215,6 +250,74 @@ void test_NCC()
     //cv::imwrite("data\\result.png", result);
 }
 
+void test_OTSU()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+   
+    cv::Mat source, result,opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    int opencv_th = cv::threshold(source, opencv_result,0,255, cv::THRESH_OTSU | cv::THRESH_BINARY);
+    std::cout << "opencv thresh : " << opencv_th << std::endl;
+    mycv::showImage(opencv_result, "opencv result");
+
+    int th = mycv::OTSU(source, result,0);
+    std::cout << "otsu thresh : " << th << std::endl;
+    mycv::showImage(source, "source", 1);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, 1);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, 2);
+    mycv::showImage(result, "result", 0);
+    mycv::OTSU(source, result, -1);
+    mycv::showImage(result, "result", 0);
+
+
+}
+
+void test_OTSU_speed()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+
+    cv::Mat source, result, opencv_result;
+    source = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+
+    constexpr int kTimes = 1000;
+    std::cout << "opencv OTSU:";
+
+    mycv::Timer_us t;
+    for (int i = 0; i < kTimes; ++i)
+        cv::threshold(source, opencv_result, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    t.Duration();
+
+    std::cout << "mycv OTSU:";
+    t.Restart();
+    for (int i = 0; i < kTimes; ++i)
+        mycv::OTSU(source, result,0);
+    t.Duration();
+
+
+}
+
+void test_hist()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+
+    cv::Mat source, result, opencv_result;
+    source = cv::imread(src_path);
+
+    int hist[256] = { 0 };
+    int hist_avx[256] = { 0 };
+    mycv::GetHist(source, hist);
+    mycv::GetHistAVX(source, hist_avx);
+
+    for (int i = 0; i < 256; ++i)
+    {
+        std::cout << hist[i] << "," << hist_avx[i] << std::endl;
+    }
+
+
+}
+
 void del()
 {
     std::cout << DBL_MAX << std::endl;
@@ -222,72 +325,222 @@ void del()
 
 }
 
-
-
-void compute_integral_image_avx(float* img, float* integral_img, int width, int height)
+void test_IntegralSpeed()
 {
-    // Compute first row and column of integral image
-    for (int i = 0; i < width; i++)
-        integral_img[i] = img[i];
-    for (int i = 1; i < height; i++)
-        integral_img[i * width] = img[i * width] + integral_img[(i - 1) * width];
+	mycv::Timer_ms t;
+	constexpr int kTimes = 10;
+	for (int src_size = 100; src_size < 2000; src_size += 200)
+	{
+		auto source = cv::Mat(cv::Size(src_size, src_size), CV_8UC1);
+		cv::randu(source, cv::Scalar(0), cv::Scalar(255));
+		cv::Mat integral, sq_integral;
 
-    // Compute remaining cells using AVX
-    __m256 sum = _mm256_load_ps(&img[0]);
-    __m256 prev_sum = sum;
-    __m256i index_incr = _mm256_setr_epi32(1, 2, 3, 4, 5, 6, 7, 8);
-    for (int i = 1; i < height; i++) {
-        for (int j = 1; j < width; j += 8) {
-            int index = i * width + j;
-            __m256 pixels = _mm256_load_ps(&img[index]);
-            sum = _mm256_add_ps(sum, pixels);
-            __m256i prev_row_index = _mm256_set1_epi32((i - 1) * width + j - 1);
-            __m256i curr_row_index = _mm256_set_epi32(index + 7, index + 6, index + 5, index + 4, index + 3, index + 2, index + 1, index);
-            __m256 prev_row_pixels = _mm256_i32gather_ps(integral_img, prev_row_index, sizeof(float));
-            __m256 curr_row_pixels = _mm256_i32gather_ps(integral_img, curr_row_index, sizeof(float));
-            __m256 result = _mm256_add_ps(_mm256_add_ps(curr_row_pixels, prev_row_pixels), _mm256_add_ps(sum, prev_sum));
-            _mm256_store_ps(&integral_img[index], result);
-            prev_sum = sum;
-            sum = _mm256_permutevar8x32_ps(sum, index_incr);
+		std::cout << "mycv integral run " << kTimes << " times ";
+		t.Restart();
+		for (int i = 0; i < kTimes; ++i)
+			mycv::integral(source, integral, sq_integral);
+		t.Duration();
+
+		std::cout << "opencv integral run " << kTimes << " times ";
+		t.Restart();
+		for (int i = 0; i < kTimes; ++i)
+			cv::integral(source, integral, sq_integral, CV_64FC1, CV_64FC1);
+		t.Duration();
+
+	}
+}
+	
+void test_Pyramid()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/source.jpg";
+   
+    cv::Mat source = cv::imread(src_path);
+
+    std::vector<cv::Mat> py_images;
+    int level = 3;
+    mycv::BuildPyramidImages(source, py_images, level);
+    for (int i=0; i<py_images.size();++i)
+    {
+        auto image = py_images[i];
+        mycv::showImage(image, std::to_string(i), 1, 1);
+    }
+    cv::waitKey(0);
+
+}
+
+float vectorDotProductAVX(const float* vectorA, const float* vectorB, int length) {
+    int avxLength = length / 8; // 每次处理 8 个浮点数
+
+    __m256 sum = _mm256_setzero_ps(); // 初始化累加和为 0
+
+    for (int i = 0; i < avxLength; ++i) {
+        __m256 vecA = _mm256_loadu_ps(vectorA + i * 8); // 加载 8 个浮点数到 AVX 寄存器
+        __m256 vecB = _mm256_loadu_ps(vectorB + i * 8); // 加载 8 个浮点数到 AVX 寄存器
+
+        sum = _mm256_add_ps(sum, _mm256_mul_ps(vecA, vecB)); // 使用 AVX 指令进行乘法和累加
+    }
+
+    float dotProduct = 0.0f;
+    // 处理剩余的元素
+    for (int i = avxLength * 8; i < length; ++i) {
+        dotProduct += vectorA[i] * vectorB[i];
+    }
+
+    // 将结果从 AVX 寄存器取回
+    float result[8];
+    _mm256_storeu_ps(result, sum);
+
+    // 对结果求和，得到最终的内积
+    
+    for (int i = 0; i < 8; ++i) {
+        dotProduct += result[i];
+    }
+
+    return dotProduct;
+}
+
+float vectorDotProduct(const float* vectorA, const float* vectorB, int length)
+{
+    float dot_product = 0.0f;
+    for (size_t i = 0; i < length; i++)
+    {
+        dot_product += vectorA[i] * vectorB[i];
+    }
+    return dot_product;
+}
+
+void test_vectorDotProductAVX()
+{
+    for (int length = 100; length < 10000; length += 100)
+    {
+        std::cout << "vector length :" << length << std::endl;
+        constexpr int times = 100000;
+        std::unique_ptr<float[]> a = std::make_unique<float[]>(length);
+        std::unique_ptr<float[]> b = std::make_unique<float[]>(length);
+        for (int i = 0; i < length; ++i)
+        {
+            a[i] = rand() % 10;
+            b[i] = rand() % 10;
         }
+
+        mycv::Timer_us ts;
+        float result = 0;
+
+        std::cout << "AVX: ";
+        ts.Restart();
+        for (int i = 0; i < times; ++i)
+            result = vectorDotProductAVX(a.get(), b.get(), length);
+        ts.Duration();
+        std::cout << "res: " << result << std::endl;
+
+        std::cout << "notmal:";
+        ts.Restart();
+        for (int i = 0; i < times; ++i)
+            result = vectorDotProduct(a.get(), b.get(), length);
+        ts.Duration();
+        std::cout << "res: " << result << std::endl;;
+    }
+
+}
+
+void test_calculateCovarianceAVX()
+{
+    const int times = 1000;
+    
+    for (int image_size = 10; image_size < 500; image_size += 10) {
+        cv::Mat target = cv::Mat(cv::Size(image_size, image_size), CV_8UC1);
+        cv::Mat target2 = cv::Mat(cv::Size(image_size, image_size), CV_8UC1);
+        cv::randu(target, cv::Scalar(0), cv::Scalar(255));
+        cv::randu(target2, cv::Scalar(0), cv::Scalar(255));
+
+        std::cout << "image size: " << image_size << std::endl;
+
+        cv::Mat A, B;
+        target.convertTo(A, CV_32FC1);
+        target2.convertTo(B, CV_32FC1);
+
+        mycv::Timer_ms ts;
+        double mean1, mean2;
+        mean1 = mycv::calculateMean(target);
+        mean2 = mycv::calculateMean(target2);
+
+        double conv = 0;
+        std::cout << "normal calculateCovariance";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovariance(target, target2, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
+
+        std::cout << "avx calculateCovarianceAVX";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovarianceAVX(A, B, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
+
+        std::cout << "avx calculateCovarianceAVXFlatten";
+        ts.Restart();
+        for (size_t i = 0; i < times; i++)
+        {
+            conv = mycv::calculateCovarianceAVXFlatten(A, B, mean1, mean2);
+        }
+        ts.Duration();
+        std::cout << "conv: " << conv << std::endl;
     }
 }
 
-
-
-void del_demo()
+void del_avx()
 {
-    std::string src_path = "data\\source.jfif";
-    std::string target_path = "data\\target.jfif";
-    cv::Mat source, target, result;
-    //source = cv::imread(src_path);
-    target = cv::imread(target_path, cv::IMREAD_GRAYSCALE);
-
-    int width = target.cols;
-    int height = target.rows;
-
-    cv::Mat img,integral_opcv;
-    target.convertTo(img, CV_32FC1);
-    cv::Mat integral_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);;
-    compute_integral_image_avx((float*)img.data, (float*)integral_image.data, width, height);
-    cv::integral(target, integral_opcv, CV_32F);
-
-    mycv::showImage(integral_opcv, "opv");
-    mycv::showImage(integral_image, "integral",0);
+    cv::Mat A = cv::Mat::ones(cv::Size(200, 200), CV_32FC1)*255;
     
 
-    cv::destroyAllWindows();
+}
+
+
+void Test_Resize()
+{
+    std::string src_path = "H:/myProjects/work/mycv-master/mycv-master/data/target.jpg";
+    
+    auto src = cv::imread(src_path, cv::IMREAD_GRAYSCALE);
+    cv::Mat dst;
+
+    mycv::showImage(src, "src",1,1);
+
+    mycv::Resize(src, dst, 500, 500, 0);
+    mycv::showImage(dst, "1",1,1);
+
+    mycv::Resize(src, dst, 500, 500, 1);
+    mycv::showImage(dst, "2",0,1);
 
 }
 
 int main()
 {
-    del_demo();
+
+    //test_OTSU();
+    //test_OTSU_speed();
+    //test_hist();
+
+	//test_IntegralAVX();
     //test_NCC();
     //test_integralImage();
+	//test_IntegralSpeed();
     //test_NCC_speed();
-    //cmp_speed();
+    //test_CalMeanVarSpeed();
     //del();
-    system("pause");
+    
+    //test_Pyramid();
+    //test_vectorDotProductAVX();
+   
+    //test_calculateCovarianceAVX();
+
+    Test_Resize();
+
+    //system("pause");
     return 0;
 }
