@@ -24,6 +24,15 @@
     <ClCompile Include="src\integral_image.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\threshold.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\halcon_fun.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resize.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mycv.hpp">
@@ -39,6 +48,15 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\integral_image.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threshold.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\halcon_fun.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\resize.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

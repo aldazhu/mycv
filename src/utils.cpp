@@ -25,6 +25,8 @@ const char* error_code_string(int error_code)
         case kBadSize:      return "Bad size!";
         case kBadDepth:     return "Bad depth!";
         case kBadInput:     return "Bad input";
+        case kNotImplement: return "Not implentment";
+        case kDoseNotSupportImageType:  return "dose not supported image data type";
     }
 
     return "Unknown error";
@@ -48,20 +50,26 @@ void showImage(const cv::Mat& image, const std::string& name, int waitMode,int w
 {
     if (image.empty())
     {
-        MYCV_ERROR(kImageEmpty, "image is empty!");
+        MYCV_ERROR2(kImageEmpty, "image is empty!");
         return;
     }
     cv::Mat visual = image;
-    if (image.type() == CV_32F || image.type() == CV_64F)
+
+	if (image.type() == CV_32S)
+	{
+		image.convertTo(visual, CV_32F);
+	}
+
+    if (image.type() == CV_32F || image.type() == CV_64F )
     {
-        cv::normalize(image, visual, 1.0,0.0, cv::NORM_MINMAX);
+        cv::normalize(visual, visual, 1.0,0.0, cv::NORM_MINMAX);
         visual.convertTo(visual, CV_8U, 255,0);
     }
+	
     cv::namedWindow(name, windowMode);
     cv::imshow(name, visual);
     cv::waitKey(waitMode);
 }
-
 
 
 
